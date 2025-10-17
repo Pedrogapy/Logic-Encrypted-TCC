@@ -6,12 +6,12 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js";
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBpBINOCuuqR16gCxckih-JpOhEvifESHk", // Suas chaves aqui
+  apiKey: "AIzaSyBpBINOCuuqR16gCxckih-JpOhEvifESHk",
   authDomain: "logic-encrypted-tcc.firebaseapp.com",
   projectId: "logic-encrypted-tcc",
-  storageBucket: "logic-encrypted-tcc.appspot.com",
-  messagingSenderId: "191903388271",
-  appId: "1:191903388271:web:455425dac4acb0d85bfe3a"
+  storageBucket: "logic-encrypted-tcc.firebasestorage.app",
+  messagingSenderId: "191903308271",
+  appId: "1:191903308271:web:455425dc4ac00bd850fe1a"
 };
 
 // Initialize Firebase

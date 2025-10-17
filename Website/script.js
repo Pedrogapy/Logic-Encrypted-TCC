@@ -2,12 +2,9 @@
 // 1. IMPORTAÇÕES
 // =================================================================
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-auth.js";
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js";
 import { auth, db } from './firebase-init.js';
-// Importações do Firestore (Banco de Dados)
-import { 
-    getFirestore, doc, getDoc, setDoc, updateDoc 
-} from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
+
 // =================================================================
 // 2. ELEMENTOS DA PÁGINA
 // =================================================================
