@@ -92,35 +92,41 @@ onAuthStateChanged(auth, (user) => {
         // Carrega os dados do Firebase para decidir qual versão do jogo carregar
         const docRef = doc(db, "jogadores", user.uid);
         getDoc(docRef).then((docSnap) => {
-            let progresso = 0;
-            if (docSnap.exists() && docSnap.data().ultimoNivelConcluido) {
-                progresso = docSnap.data().ultimoNivelConcluido;
-            }
+        let progresso = 0;
+        if (docSnap.exists() && docSnap.data().ultimoNivelConcluido) {
+            progresso = docSnap.data().ultimoNivelConcluido;
+        }
+        progresso = Math.max(0, Math.min(progresso, 9));
+        
+        console.log(`Progresso do Firebase: ${progresso}. Injetando variável global...`);
 
-            // Garante que o progresso está entre 0 e 9 (para 10 níveis)
-            progresso = Math.max(0, Math.min(progresso, 9));
-            
-            // Decide qual versão do jogo deve ser carregada (versão 1 a 10)
-            const versao_para_carregar = progresso + 1;
-            console.log(`Progresso do Firebase: ${progresso}. Carregando Jogo Versão: ${versao_para_carregar}`);
-            
-            // CONFIRME O NOME EXATO DO SEU ARQUIVO .JS EXPORTADO PELO GAMEMAKER
-            const gameFileName = "Logic Encrypted backup 11 firebase2.js"; // Use o nome exato da sua exportação
+        // =========================================================
+        // AQUI ESTÁ A MÁGICA!
+        // =========================================================
 
-            // Cria a tag de canvas dinamicamente
-            const gameCanvas = document.createElement('canvas');
-            gameCanvas.id = 'canvas';
-            // Adiciona o canvas dentro da 'area-logada'
-            document.getElementById('area-logada').appendChild(gameCanvas); 
+        // 1. Defina uma variável global na "janela" do navegador.
+        // Dê um nome único para ela.
+        window.LOGIC_ENCRYPTED_LOAD_PROGRESS = progresso;
 
-            // Cria a tag de script dinamicamente para carregar o jogo correto
-            const gameScript = document.createElement('script');
-            gameScript.type = 'text/javascript';
-            gameScript.src = `game_versions/versao_${versao_para_carregar}/html5game/${gameFileName}`;
-            
-            // Adiciona o script à página, o que vai iniciar o motor do jogo
-            document.body.appendChild(gameScript);
-        });
+        // 2. Confirme o nome EXATO do seu arquivo de jogo
+        const gameFileName = "Logic Encrypted backup 11 firebase2.js"; 
+
+        // 3. Crie o canvas (como você já faz)
+        const gameCanvas = document.createElement('canvas');
+        gameCanvas.id = 'canvas';
+        document.getElementById('area-logada').appendChild(gameCanvas); 
+
+        // 4. Carregue a UMA ÚNICA VERSÃO do jogo.
+        // Crie uma pasta nova (ex: "game_build_unica") e coloque
+        // sua compilação HTML5 lá.
+        const gameScript = document.createElement('script');
+        gameScript.type = 'text/javascript';
+        
+        // ATENÇÃO: Carregue sempre a MESMA build
+        gameScript.src = `game_build_unica/html5game/${gameFileName}`; // <-- Ajuste esse caminho!
+        
+        document.body.appendChild(gameScript);
+    });
          
     } else {
         // Quando o usuário desloga

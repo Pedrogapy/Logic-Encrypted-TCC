@@ -49,3 +49,32 @@ function RegisterUser(email, password) {
 }
 
 // (As funções de Login, Salvar e Carregar virão nos próximos passos)
+// Em GameMakerProject/datafiles/firebase-api.js
+
+// Esta função será CHAMADA PELO GAMEMAKER
+// para "puxar" os dados do site.
+function gms_API_puxarProgressoDoSite() {
+    
+    // 1. Verifica se o Website/script.js definiu a variável global
+    if (typeof window.LOGIC_ENCRYPTED_LOAD_PROGRESS !== 'undefined') {
+        
+        let nivelDoSite = window.LOGIC_ENCRYPTED_LOAD_PROGRESS;
+        console.log("firebase-api.js (jogo): Lendo progresso do 'window'. Nível: " + nivelDoSite);
+
+        // 2. Agora, chame a função GML 'scr_gml_set_progress'
+        if (typeof scr_gml_set_progress === "function") {
+            scr_gml_set_progress(nivelDoSite);
+        } else {
+            console.error("ERRO: A função GML 'scr_gml_set_progress' não foi encontrada.");
+        }
+        
+    } else {
+        // Se a variável não existir (ex: rodando o jogo local),
+        // carregar o jogo como um novo jogador.
+        console.warn("firebase-api.js (jogo): Nenhuma variável de progresso encontrada. Carregando como novo jogador.");
+        
+        if (typeof scr_gml_set_progress === "function") {
+            scr_gml_set_progress(0); // Manda 0 (só a primeira fase liberada)
+        }
+    }
+}
