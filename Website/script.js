@@ -4,7 +4,10 @@
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-auth.js";
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js";
 import { auth, db } from './firebase-init.js';
-
+// Importações do Firestore (Banco de Dados)
+import { 
+    getFirestore, doc, getDoc, setDoc, updateDoc 
+} from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
 // =================================================================
 // 2. ELEMENTOS DA PÁGINA
 // =================================================================
@@ -77,6 +80,50 @@ botaoSair.addEventListener('click', () => {
 onAuthStateChanged(auth, (user) => {
     if (user) {
         areaLogada.style.display = 'block';
+        // --- ADICIONAR ESTE BLOCO (LÓGICA DE CARREGAMENTO) ---
+console.log("Usuário logado. Verificando progresso no Firebase...");
+
+// Função async para buscar os dados e carregar o jogo
+const carregarJogo = async () => {
+    try {
+        // 1. Pega o documento do usuário no Firestore
+        // (Usando "jogadores" como vi no seu script)
+        const userDocRef = doc(db, "jogadores", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        let ultimoNivel = 0; // Nível padrão se for novo
+        if (userDoc.exists() && userDoc.data().ultimoNivelConcluido !== undefined) {
+            ultimoNivel = userDoc.data().ultimoNivelConcluido;
+        }
+
+        // 2. Decide qual versão do jogo carregar (Nível Salvo + 1)
+        const versaoParaCarregar = ultimoNivel + 1;
+        const gamePath = `game_versions/versao_${versaoParaCarregar}/index.html`;
+
+        console.log(`Progresso atual: ${ultimoNivel}. Carregando: ${gamePath}`);
+
+        // 3. Carrega o jogo no iframe
+        // (Estou usando o ID 'game-iframe-container' do seu HTML)
+        const gameFrame = document.getElementById("game-iframe-container"); 
+        if (gameFrame) {
+            gameFrame.src = gamePath;
+        } else {
+            console.error("ERRO: Não encontrei o iframe 'game-iframe-container' na página.");
+        }
+
+    } catch (e) {
+        console.error("Erro ao buscar progresso do usuário:", e);
+        // Em caso de erro, carrega a versão 1
+        const gameFrame = document.getElementById("game-iframe-container");
+        if (gameFrame) {
+            gameFrame.src = "game_versions/versao_1/index.html";
+        }
+    }
+};
+
+// Chama a função para carregar o jogo
+carregarJogo();
+// --- FIM DO BLOCO ---
         areaNaoLogada.style.display = 'none';
         emailUsuario.textContent = user.email;
 
@@ -158,5 +205,65 @@ window.addEventListener('hashchange', () => {
                     .catch((error) => console.error("Erro ao salvar progresso: ", error));
             }
         }
+    }
+});
+// =================================================================
+// 4. LÓGICA DE SALVAMENTO (OUVINTE DE HASH)
+// =================================================================
+
+window.addEventListener("hashchange", () => {
+    const hash = window.location.hash; // Pega o que vem depois do '#' na URL
+    console.log("Hash da URL mudou para:", hash);
+
+    // Verifica se o hash começa com o nosso sinal de salvar
+    if (hash.startsWith("#save_level_")) {
+
+        // Extrai o número do nível (ex: de "#save_level_1" pega "1")
+        const levelCompletedStr = hash.replace("#save_level_", "");
+        const levelCompletedInt = parseInt(levelCompletedStr, 10); // Converte para número
+
+        // Verifica se conseguiu converter para número
+        if (isNaN(levelCompletedInt)) {
+            console.error("Hash de salvamento inválido:", hash);
+            return; // Para a execução se o número for inválido
+        }
+
+        // Pega o usuário que está logado no momento
+        const user = auth.currentUser;
+
+        if (user) {
+            console.log(`Sinal recebido: Salvar nível ${levelCompletedInt} para o usuário ${user.uid}`);
+            // const db = getFirestore(); // Você já deve ter 'db' importado no topo
+            const userDocRef = doc(db, "jogadores", user.uid); // Usa a coleção "jogadores"
+
+            // Função async para salvar no Firebase
+            const saveProgress = async () => {
+                try {
+                    // Atualiza o campo 'ultimoNivelConcluido' no Firestore
+                    // O 'merge: true' garante que outros campos não sejam apagados
+                    await setDoc(userDocRef, { 
+                        ultimoNivelConcluido: levelCompletedInt 
+                    }, { merge: true }); 
+
+                    console.log("PROCESSO SALVO NO FIREBASE!");
+
+                    // Opcional, mas RECOMENDADO pela sua arquitetura:
+                    // Recarregar a página inteira para forçar o carregamento da próxima versão do jogo
+                    console.log("Recarregando a página para carregar a próxima versão...");
+                    window.location.reload(); 
+
+                } catch (e) {
+                    console.error("Erro ao salvar progresso no Firebase:", e);
+                }
+            };
+
+            saveProgress(); // Chama a função para salvar
+
+        } else {
+            console.warn("Sinal de salvamento recebido, mas nenhum usuário está logado.");
+        }
+
+        // Limpa o hash da URL para evitar acionamentos repetidos se algo der errado
+        window.location.hash = ""; 
     }
 });
