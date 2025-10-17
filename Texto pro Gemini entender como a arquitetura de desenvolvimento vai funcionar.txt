@@ -1,0 +1,66 @@
+Certo. Aqui está um resumo da minha compreensão atual da arquitetura do projeto (Site + Jogo + Firebase) e do fluxo de dados.
+
+Resumo da Arquitetura do Projeto
+1. Componentes Principais e Separação
+
+O sistema é dividido em duas partes distintas que se comunicam de forma limitada:
+
+O Website (Frontend): Uma aplicação web (HTML, CSS, JavaScript) que lida com autenticação de usuários (Login via Firebase Auth) e serve como "carregador" (loader) para o jogo.
+
+O Jogo (GameMaker): Exportado como HTML5. Existem 10 "versões" (pastas) separadas do jogo no servidor (ex: /versao_1/, /versao_2/, etc.).
+
+O Banco de Dados (Backend): Firebase (Firestore/Realtime Database) que armazena o progresso do usuário, especificamente um campo como ultimoNivelConcluido.
+
+2. Fluxo de Dados (Unidirecional)
+
+A comunicação é estritamente Jogo -> Site.
+
+O Jogo ENVIA progresso para o site (mudando o hash da URL).
+
+O Site RECEBE essa mudança e a salva no Firebase.
+
+O Jogo NÃO RECEBE informações do site ou do Firebase enquanto está rodando.
+
+3. Lógica de Carregamento de Versão (Função do Site)
+
+Este é o "loop de carregamento" (Load):
+
+O usuário acessa o Website e faz login (Autenticação Firebase).
+
+O JavaScript do site consulta o Firebase Database para obter o progresso salvo do usuário (o valor ultimoNivelConcluido).
+
+O site usa esse valor para decidir qual versão do jogo carregar:
+
+Se ultimoNivelConcluido for 0 (ou não existir), o site carrega a versao_1 (a build base, que só tem a Fase 1 desbloqueada).
+
+Se ultimoNivelConcluido for 1, o site carrega a versao_2 (a build que tem as Fases 1 e 2 desbloqueadas).
+
+Se ultimoNivelConcluido for N, o site carrega a versao_N+1 (que tem as Fases 1 a N+1 desbloqueadas).
+
+4. Lógica de Jogo e Salvamento (Função do Jogo)
+
+Este é o "loop de salvamento" (Save):
+
+O Jogo (qualquer versão) é jogado. O jogo em si não sabe quem é o usuário.
+
+O obj_controle gerencia a lógica interna.
+
+O jogo ignora qualquer sistema de save/load local (os scripts scr_save_progress e scr_load_progress e o arquivo "progress.sav" são irrelevantes para esta arquitetura).
+
+No evento Step_0.gml do obj_controle, quando um puzzle é resolvido com sucesso:
+
+O jogo identifica o número da fase atual (ex: puzzle_fase_atual).
+
+Ele executa a função url_open() para alterar o hash da URL do navegador (ex: url_open("#save_progress01") se a Fase 1 foi concluída).
+
+O jogo não faz mais nada. Sua responsabilidade de "salvar" termina aqui.
+
+5. Lógica de Persistência (Função do Site)
+
+O JavaScript do Website (que está rodando "fora" do iframe do jogo) tem um event listener monitorando mudanças no hash da URL.
+
+O site detecta a mudança (ex: #save_progress01).
+
+O JS do site, sabendo qual usuário está logado, envia uma atualização para o Firebase Database, definindo ultimoNivelConcluido desse usuário como 1.
+
+Conclusão do Processo: Na próxima vez que o usuário logar, o Passo 3 será executado novamente. O site lerá ultimoNivelConcluido = 1 e servirá a versao_2 do jogo, criando a sensação de progressão. O obj_gerenciador_site, como está escrito (para receber dados via async_load), não é utilizado neste fluxo.
