@@ -1,0 +1,2 @@
+meu_conceito_nome = "Condicionais (if/else)";
+meu_conceito_desc = "Um condicional 'if' (se) verifica se uma condicao e verdadeira. Se for, ele executa um bloco de codigo. O 'else' (senao) e opcional e executa um bloco de codigo diferente se a condicao for falsa.\n\nExemplo:\n\n    if (tem_chave == true) {\n        abrir_porta();\n    } else {\n        procurar_chave();\n    }";

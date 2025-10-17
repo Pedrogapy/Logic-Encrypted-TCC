@@ -1,0 +1,2 @@
+meu_conceito_nome = "Laco for";
+meu_conceito_desc = "Um laco 'for' e usado para repetir um bloco de codigo um numero especifico de vezes. Ele tem tres partes: inicializacao (onde o contador comeca), condicao (enquanto for verdadeira, o laco continua) e incremento (o que acontece com o contador a cada repeticao).\n\nExemplo:\n\n    for (var i = 0; i < 3; i++) {\n        piscar_luz();\n    }\n\nEste codigo pisca a luz 3 vezes (para i = 0, 1 e 2).";

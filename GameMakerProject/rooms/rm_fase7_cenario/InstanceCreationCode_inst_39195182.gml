@@ -1,0 +1,2 @@
+meu_conceito_nome = "Operadores Logicos (&& e ||)";
+meu_conceito_desc = "Operadores logicos sao usados para combinar multiplas condicoes. O operador '&&' (E) so e verdadeiro se AMBAS as condicoes forem verdadeiras. O operador '||' (OU) e verdadeiro se PELO MENOS UMA das condicoes for verdadeira.\n\nExemplo:\n\n    if (tem_chave && porta_trancada) {\n        abrir_porta();\n    }";

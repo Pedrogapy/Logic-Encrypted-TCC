@@ -1,0 +1,2 @@
+meu_conceito_nome = "Integracao de Conceitos";
+meu_conceito_desc = "Um programa real raramente usa apenas um conceito. A verdadeira programacao acontece quando combinamos tudo o que aprendemos: sequencias, variaveis, condicionais e lacos trabalham juntos para criar logicas complexas e resolver problemas.";

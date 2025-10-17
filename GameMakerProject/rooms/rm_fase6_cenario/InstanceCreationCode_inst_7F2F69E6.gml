@@ -1,0 +1,2 @@
+meu_conceito_nome = "Laco while";
+meu_conceito_desc = "Um laco 'while' (enquanto) repete um bloco de codigo enquanto uma condicao for verdadeira. Ele e util quando voce nao sabe exatamente quantas vezes precisa repetir, apenas a condicao para parar.\n\nExemplo:\n\n    while (porta_emperrada == true) {\n        tentar_abrir_porta();\n    }\n\nEste codigo continuara tentando abrir a porta ate que ela nao esteja mais emperrada.";

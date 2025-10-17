@@ -1,0 +1,2 @@
+meu_conceito_nome = "Variaveis";
+meu_conceito_desc = "Em programacao, uma variavel e como uma caixa com uma etiqueta. A etiqueta e o nome da variavel, e dentro da caixa voce pode guardar um valor, como um numero ou um texto. Voce pode usar o nome da variavel para acessar o valor guardado sempre que precisar.";

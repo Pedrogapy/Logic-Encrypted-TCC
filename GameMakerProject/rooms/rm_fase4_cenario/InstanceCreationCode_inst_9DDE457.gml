@@ -1,0 +1,2 @@
+meu_conceito_nome = "Operadores de Comparacao";
+meu_conceito_desc = "Operadores de comparacao como '<=' (menor ou igual) e '>=' (maior ou igual) sao usados em condicionais para verificar relacoes entre valores.\n\nExemplo:\n\n    if (nivel_jogador >= 10) {\n        desbloquear_habilidade_especial();\n    }\n\nEste codigo so executa se o nivel do jogador for 10 ou mais.";

@@ -1,0 +1,2 @@
+meu_conceito_nome = "Sequencia de comandos";
+meu_conceito_desc = "Um programa executa comandos um apos o outro, em ordem.  A sequencia correta e crucial para que o programa funcione como o esperado. Pense em uma receita: voce precisa misturar os ingredientes ANTES de levar ao forno.";

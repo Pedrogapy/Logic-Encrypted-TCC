@@ -1,0 +1,2 @@
+meu_conceito_nome = "Negacao Logica (!)";
+meu_conceito_desc = "O operador de negacao '!' (NAO) inverte um valor booleano. Se algo e 'true' (verdadeiro), o '!' o transforma em 'false' (falso), e vice-versa. E util para verificar quando uma condicao NAO e atendida.\n\nExemplo:\n\n    if (!sensor_ativado) {\n        disparar_alarme();\n    }";

@@ -1,0 +1,2 @@
+meu_conceito_nome = "Integracao Final de Conceitos";
+meu_conceito_desc = "Parabens por chegar ate aqui! Esta fase final combina tudo o que voce aprendeu. Use seu conhecimento de variaveis, condicionais, operadores e lacos para resolver o ultimo desafio.";
