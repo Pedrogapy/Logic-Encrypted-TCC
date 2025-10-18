@@ -2,21 +2,28 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Logic-Encrypted — Puzzles de Lógica</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Logic-Encrypted — Cripta</title>
   <link rel="stylesheet" href="style.css"/>
 
-  <!-- Firebase / app -->
+  <!-- Firebase + app -->
   <script type="module" src="firebase-init.js"></script>
   <script type="module" src="script.js"></script>
 
-  <!-- Módulos do jogo (puzzles) -->
+  <!-- Jogo (módulos) -->
+  <script type="module" src="game/core.js"></script>
+  <script type="module" src="game/entities.js"></script>
+  <script type="module" src="game/levels.js"></script>
+  <script type="module" src="game/main.js"></script>
+
+  <!-- Puzzles (engine + fases) -->
+  <script type="module" src="puzzles/puzzles.js"></script>
   <script type="module" src="puzzles/engine.js"></script>
 </head>
 <body>
   <header>
     <h1>Logic-Encrypted</h1>
-    <p class="subtitle">Jogo educacional para ensino de lógica — corrigindo código para avançar</p>
+    <p class="subtitle">Ande pela cripta, estude as páginas, resolva o terminal e abra a porta.</p>
   </header>
 
   <section class="status">
@@ -58,46 +65,39 @@
       <p>Último nível concluído: <strong id="progresso-label">0</strong></p>
     </div>
 
-    <!-- Seleção de fases (apenas as desbloqueadas) -->
-    <div class="card" id="seletor-fases" style="display:none;">
-      <h3>Fases desbloqueadas</h3>
-      <div id="lista-fases" class="fases-grid"></div>
-    </div>
-
-    <!-- Puzzle -->
-    <div class="card">
-      <div class="puzzle-header">
-        <div>
-          <h3 id="puzzle-titulo">Título</h3>
-          <p id="puzzle-descricao" class="muted">Descrição</p>
-        </div>
-        <div class="puzzle-actions">
-          <button id="btn-caderno" class="secondary">Caderno Virtual</button>
-        </div>
+    <div class="game-wrap card">
+      <div class="game-toolbar">
+        <span id="hud-msg" class="muted">Use WASD/Setas para se mover. <b>E</b> interage.</span>
+        <div class="spacer"></div>
+        <button id="btn-reiniciar" class="secondary">Reiniciar sala</button>
+        <button id="btn-proximo" disabled>Próxima sala</button>
       </div>
-
-      <div class="editor-wrap">
-        <div class="editor-toolbar">
-          <span class="muted">Edite o código e clique em “Executar testes”.</span>
-          <div class="spacer"></div>
-          <button id="btn-executar">Executar testes</button>
-        </div>
-        <textarea id="editor-codigo" spellcheck="false"></textarea>
-      </div>
-
-      <div class="result-wrap">
-        <h4>Feedback</h4>
-        <pre id="saida-teste" class="terminal">—</pre>
-      </div>
-
-      <div class="puzzle-footer">
-        <button id="btn-reiniciar" class="secondary">Reiniciar fase</button>
-        <button id="btn-proximo" disabled>Próxima fase</button>
-      </div>
+      <canvas id="game-canvas" width="960" height="576"></canvas>
     </div>
   </section>
 
-  <!-- Modal Caderno Virtual -->
+  <!-- Modal do Terminal (puzzle) -->
+  <div id="modal-puzzle" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h3 id="pz-title">Terminal</h3>
+        <button id="pz-close" class="secondary">Fechar</button>
+      </div>
+      <p id="pz-desc" class="muted"></p>
+      <div class="editor-toolbar">
+        <span class="muted">Edite o código, depois Execute os testes.</span>
+        <div class="spacer"></div>
+        <button id="pz-run">Executar testes</button>
+      </div>
+      <textarea id="pz-code" spellcheck="false"></textarea>
+      <div class="result-wrap">
+        <h4>Feedback</h4>
+        <pre id="pz-out" class="terminal">—</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Caderno Virtual (páginas encontradas) -->
   <div id="modal-caderno" class="modal" style="display:none;">
     <div class="modal-content">
       <div class="modal-head">

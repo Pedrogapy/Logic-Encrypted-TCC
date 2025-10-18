@@ -13,28 +13,22 @@ button.secondary{background:#2a2f4a;color:#f5f7ff}
 .row{display:flex;align-items:center;gap:12px}
 .muted{opacity:.8}
 .spacer{flex:1}
+.game-wrap{display:flex;flex-direction:column;gap:8px}
+.game-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+#game-canvas{width:100%;max-width:100%;border:1px solid #2a2f4a;border-radius:12px;background:#0b0e1a}
 
-.fases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
-.fase-btn{padding:10px;border-radius:10px;background:#22263f;border:1px solid #2a2f4a;cursor:pointer}
-.fase-btn.locked{opacity:.4;cursor:not-allowed}
-.fase-btn strong{display:block}
+/* Modal genérico */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:1000}
+.modal-content{width:min(960px,96vw);max-height:88vh;overflow:auto;background:#171a2b;border-radius:16px;padding:16px;border:1px solid #2a2f4a}
+.modal-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 
-.puzzle-header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-.puzzle-actions{margin-left:auto}
-
-.editor-wrap{margin-top:6px}
-.editor-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-#editor-codigo{width:100%;min-height:260px;border-radius:10px;border:1px solid #2a2f4a;background:#0b0e1a;color:#eaf0ff;padding:12px;font-family:ui-monospace,Consolas,Monaco,monospace;line-height:1.35}
-
+/* Terminal / editor */
+.editor-toolbar{display:flex;align-items:center;gap:10px;margin:8px 0}
+#pz-code{width:100%;min-height:260px;border-radius:10px;border:1px solid #2a2f4a;background:#0b0e1a;color:#eaf0ff;padding:12px;font-family:ui-monospace,Consolas,Monaco,monospace;line-height:1.35}
 .result-wrap{margin-top:10px}
 .terminal{background:#0b0e1a;border:1px solid #2a2f4a;border-radius:10px;padding:10px;min-height:80px;white-space:pre-wrap}
 
-.puzzle-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
-
-/* Modal Caderno */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}
-.modal-content{width:min(900px,95vw);max-height:85vh;overflow:auto;background:#171a2b;border-radius:16px;padding:16px;border:1px solid #2a2f4a}
-.modal-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+/* Caderno */
 .caderno h4{margin:8px 0 4px}
 .caderno p{margin:4px 0 10px}
 .caderno code{background:#0b0e1a;padding:2px 6px;border-radius:8px;border:1px solid #2a2f4a}
