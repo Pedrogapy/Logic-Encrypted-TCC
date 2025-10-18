@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logic-Encrypted</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Logic-Encrypted</h1>
+    <p class="subtitle">Jogo educacional para lógica de programação</p>
+  </header>
+
+  <section class="status">
+    <p><strong>Status da Conexão Firebase:</strong> <span id="status-firebase">Verificando...</span></p>
+  </section>
+
+  <section id="area-nao-logada">
+    <h2>Crie sua conta</h2>
+    <div class="card">
+      <label>E-mail</label>
+      <input id="campo-email" type="email" placeholder="seu@email.com" />
+      <label>Senha</label>
+      <input id="campo-senha" type="password" placeholder="********" />
+      <button id="botao-cadastrar">Cadastrar</button>
+      <p id="mensagem-erro" class="error"></p>
+    </div>
+
+    <h2>Ou entre</h2>
+    <div class="card">
+      <label>E-mail</label>
+      <input id="login-email" type="email" placeholder="seu@email.com" />
+      <label>Senha</label>
+      <input id="login-senha" type="password" placeholder="********" />
+      <button id="botao-login">Entrar</button>
+      <p id="mensagem-login-erro" class="error"></p>
+    </div>
+  </section>
+
+  <section id="area-logada" style="display:none;">
+    <div class="row">
+      <h2>Bem-vindo, <span id="email-usuario"></span></h2>
+      <button id="botao-sair" class="secondary">Sair</button>
+    </div>
+    <hr>
+    <h3>Jogo</h3>
+    <p>Ao concluir uma fase, seu progresso é salvo automaticamente.</p>
+    <iframe id="game-iframe-container" title="Logic-Encrypted (HTML5)" loading="lazy"></iframe>
+  </section>
+
+  <script type="module" src="firebase-init.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
+</html>
