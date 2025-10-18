@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- STUB: carrega o substituto do Firebase -->
+  <!-- 1) carrega o stub nesta pasta -->
   <script src="firebase-api.js?v=8"></script>
+  <!-- 2) fallback absoluto (se o 1 falhar) -->
   <script>
     if (typeof window.firebase_init !== 'function') {
       document.write('<script src="/Logic-Encrypted-TCC/game_versions/versao_1/firebase-api.js?v=8"><\/script>');
     }
   </script>
+
 
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="apple-mobile-web-app-capable" content="yes" />

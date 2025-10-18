@@ -1,62 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
-  
-  <!-- STUB: precisa vir ANTES de qualquer outro script -->
-  <!-- 1) relativo (mesma pasta do HTML do jogo) -->
-  <script src="firebase-api.js?v=8"></script>
-  <!-- 2) fallback absoluto (se o relativo falhar) -->
-  <script>
-    if (typeof window.firebase_init !== 'function') {
-      document.write('<script src="/Logic-Encrypted-TCC/game_versions/versao_1/firebase-api.js?v=8"><\/script>');
-    }
-  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Logic-Encrypted</title>
+  <link rel="stylesheet" href="style.css"/>
 
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta charset="utf-8" />
-  <meta http-equiv="pragma" content="no-cache" />
-
-  <title>Logic Encrypted</title>
-
-  <style>
-    body{
-      background:#000; /* corrigido (antes estava #0) */
-      color:#cccccc;
-      margin:0; padding:0; border:0;
-    }
-    canvas{
-      image-rendering: optimizeSpeed;
-      -webkit-interpolation-mode: nearest-neighbor;
-      -ms-touch-action:none; touch-action:none;
-      margin:0; padding:0; border:0;
-    }
-    :-webkit-full-screen #canvas{width:100%;height:100%}
-    :-webkit-full-screen{width:100%;height:100%}
-
-    /* Runner */
-    div.gm4html5_div_class{margin:0;padding:0;border:0}
-    div.gm4html5_login{
-      padding:20px; position:absolute; border:2px solid #000;
-      background:#404040; color:#0f0; border-radius:15px;
-      box-shadow:#101010 20px 20px 40px;
-    }
-    div.gm4html5_cancel_button{float:right}
-    div.gm4html5_login_button{float:left}
-    div.gm4html5_login_header{text-align:center}
-  </style>
+  <!-- Firebase do seu projeto (ES modules) -->
+  <script type="module" src="firebase-init.js"></script>
+  <script type="module" src="script.js"></script>
 </head>
 <body>
-  <div class="gm4html5_div_class" id="gm4html5_div_id">
-    <canvas id="canvas" width="1366" height="768">
-      <p>Your browser doesn't support HTML5 canvas.</p>
-    </canvas>
-  </div>
+  <header>
+    <h1>Logic-Encrypted</h1>
+    <p class="subtitle">Jogo educacional para lógica de programação</p>
+  </header>
 
-  <!-- Script principal gerado pelo GameMaker -->
-  <script src="html5game/Logic Encrypted  backup 11 firebase2.js?cachebust=1680493476"></script>
-  <script>window.onload = GameMaker_Init;</script>
+  <section class="status">
+    <p><strong>Status Firebase:</strong> <span id="status-firebase">Verificando...</span></p>
+  </section>
+
+  <section id="area-nao-logada">
+    <div class="card">
+      <h2>Criar conta</h2>
+      <label>E-mail</label>
+      <input id="campo-email" type="email" placeholder="seu@email.com"/>
+      <label>Senha</label>
+      <input id="campo-senha" type="password" placeholder="********"/>
+      <button id="botao-cadastrar">Cadastrar</button>
+      <p id="mensagem-erro" class="error"></p>
+    </div>
+
+    <div class="card">
+      <h2>Entrar</h2>
+      <label>E-mail</label>
+      <input id="login-email" type="email" placeholder="seu@email.com"/>
+      <label>Senha</label>
+      <input id="login-senha" type="password" placeholder="********"/>
+      <button id="botao-login">Entrar</button>
+      <p id="mensagem-login-erro" class="error"></p>
+    </div>
+  </section>
+
+  <section id="area-logada" style="display:none;">
+    <div class="row">
+      <h2>Bem-vindo, <span id="email-usuario"></span></h2>
+      <button id="botao-sair" class="secondary">Sair</button>
+    </div>
+    <hr/>
+    <h3>Jogo</h3>
+    <p>Ao concluir uma fase, seu progresso é salvo automaticamente.</p>
+    <iframe id="game-iframe-container" title="Logic-Encrypted (HTML5)" loading="lazy"></iframe>
+  </section>
 </body>
 </html>
