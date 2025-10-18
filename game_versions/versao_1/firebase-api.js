@@ -24,3 +24,4 @@
 
   funcs.forEach(f => { if (typeof window[f] !== 'function') window[f] = stub(f); });
 })();
+(function(){const s=(n)=>(...a)=>{console.log(`[stub:${n}]`,a);if((n.includes('saveProgress')||n.includes('setLevel'))&&a.length){const l=parseInt(a[0],10);if(!isNaN(l)){try{parent.location.hash='#save_level_'+l;}catch(_){}}}return null;};['firebase_init','firebase2_init','firebase_login','firebase2_login','firebase_logout','firebase2_logout','firebase_saveProgress','firebase2_saveProgress','firebase_getProgress','firebase2_getProgress','firebase_setLevel','firebase2_setLevel','firebase_reportEvent','firebase2_reportEvent'].forEach(f=>{if(typeof window[f]!=='function')window[f]=s(f);});})();
