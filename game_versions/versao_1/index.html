@@ -5,6 +5,13 @@
     
 
     <head>
+      <script src="firebase-api.js?v=8"></script>
+      <script>
+        if (typeof window.firebase_init !== 'function') {
+          document.write('<script src="/Logic-Encrypted-TCC/game_versions/versao_1/firebase-api.js?v=8"><\/script>');
+        }
+      </script>
+
         <!-- 1) relativo (mesma pasta do HTML do jogo) -->
         <script src="firebase-api.js?v=7"></script>
 
