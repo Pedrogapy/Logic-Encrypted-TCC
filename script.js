@@ -7,24 +7,30 @@ import {
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js";
 import { auth, db } from "./firebase-init.js";
 
-const MAX_VERSAO = 1;
+/**
+ * Como o jogo não recebe mensagens externas, a progressão é por versões.
+ * Ao fazer login, buscamos "ultimoNivelConcluido" no Firestore e carregamos
+ * a versão correspondente (nivel+1), limitado a MAX_VERSAO.
+ */
+const MAX_VERSAO = 10;
 
-const statusEl = document.getElementById("status-firebase");
-const campoEmail = document.getElementById("campo-email");
-const campoSenha = document.getElementById("campo-senha");
-const botaoCadastrar = document.getElementById("botao-cadastrar");
-const msgErro = document.getElementById("mensagem-erro");
-const loginEmail = document.getElementById("login-email");
-const loginSenha = document.getElementById("login-senha");
-const botaoLogin = document.getElementById("botao-login");
-const msgLoginErro = document.getElementById("mensagem-login-erro");
-const areaNaoLogada = document.getElementById("area-nao-logada");
-const areaLogada = document.getElementById("area-logada");
-const emailUsuario = document.getElementById("email-usuario");
-const botaoSair = document.getElementById("botao-sair");
-const gameFrame = document.getElementById("game-iframe-container");
+const $ = (id) => document.getElementById(id);
+const statusEl       = $("status-firebase");
+const campoEmail     = $("campo-email");
+const campoSenha     = $("campo-senha");
+const botaoCadastrar = $("botao-cadastrar");
+const msgErro        = $("mensagem-erro");
+const loginEmail     = $("login-email");
+const loginSenha     = $("login-senha");
+const botaoLogin     = $("botao-login");
+const msgLoginErro   = $("mensagem-login-erro");
+const areaNaoLogada  = $("area-nao-logada");
+const areaLogada     = $("area-logada");
+const emailUsuario   = $("email-usuario");
+const botaoSair      = $("botao-sair");
+const gameFrame      = $("game-iframe-container");
 
-if (auth && db) statusEl.textContent = "Conectado com Sucesso!";
+statusEl.textContent = (auth && db) ? "Conectado com Sucesso!" : "Falhou a conexão.";
 
 botaoCadastrar.addEventListener("click", async () => {
   msgErro.textContent = "";
@@ -60,8 +66,8 @@ botaoSair.addEventListener("click", async () => {
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     areaNaoLogada.style.display = "none";
-    areaLogada.style.display = "block";
-    emailUsuario.textContent = user.email;
+    areaLogada.style.display    = "block";
+    emailUsuario.textContent    = user.email;
 
     try {
       const snap = await getDoc(doc(db, "jogadores", user.uid));
@@ -69,9 +75,8 @@ onAuthStateChanged(auth, async (user) => {
       if (snap.exists() && typeof snap.data().ultimoNivelConcluido === "number") {
         ultimo = snap.data().ultimoNivelConcluido;
       }
-      const versao = Math.min(ultimo + 1, MAX_VERSAO);
-      const gamePath = `game_versions/versao_${versao}/index.html`;
-      gameFrame.src = gamePath;
+      const versao = Math.max(1, Math.min(ultimo + 1, MAX_VERSAO));
+      gameFrame.src = `game_versions/versao_${versao}/index.html`;
     } catch (e) {
       console.error("Erro ao buscar progresso:", e);
       gameFrame.src = "game_versions/versao_1/index.html";
@@ -83,7 +88,11 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// recebe progresso do jogo (#save_level_X)
+/**
+ * Quando o jogo (que não recebe mensagens) conclui uma versão,
+ * nós atualizamos manualmente o Firestore via hash: #save_level_X
+ * (isso é emitido pelo stub dentro do index da versão).
+ */
 window.addEventListener("hashchange", async () => {
   const h = window.location.hash;
   if (!h.startsWith("#save_level_")) return;
