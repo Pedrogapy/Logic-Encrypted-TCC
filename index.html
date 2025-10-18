@@ -1,42 +1,25 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Logic-Encrypted — Cripta</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body{background:#0c0f16;color:#e9edf1;font-family:system-ui,Arial,Segoe UI,Roboto,sans-serif}
-    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-    h1{font-weight:700;margin:0 0 8px}
-    .card{background:#111624;border:1px solid #1c2336;border-radius:12px;padding:16px;margin:14px 0}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-    button{background:#2c3654;color:#fff;border:1px solid #3a4670;border-radius:10px;padding:10px 14px;cursor:pointer}
-    button:disabled{opacity:.5;cursor:not-allowed}
-    #game-canvas{display:block;background:#0a0f19;border:1px solid #1d2741;border-radius:12px;width:100%;height:520px}
-    #hud-msg{margin:8px 0 0 2px;color:#c9d4ff;font-size:14px}
-    /* modal de fases */
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
-    .modal.on{display:flex}
-    .modal .box{background:#0f1422;border:1px solid #243053;border-radius:14px;padding:16px;width:min(500px,92vw)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}
-    .lvl-btn{padding:12px;text-align:center;border-radius:10px;border:1px solid #394874;background:#18203a;color:#e9edf1;cursor:pointer}
-    .badge{font-size:12px;color:#90a0ff}
-  </style>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <div class="wrap">
     <h1>Logic-Encrypted</h1>
-    <p>Ande pela cripta, estude as páginas, resolva o terminal e abra a porta.</p>
+    <p>Ande pela cripta, estude as páginas (Caderno), resolva o terminal e abra a porta.</p>
 
     <div class="card">
       <div id="status">Status Firebase: <b>Conectado com Sucesso!</b></div>
       <div class="row" style="margin-top:10px">
         <div id="user">Bem-vindo, <b>pedro.g.a.pereira@unirv.edu.br</b></div>
-        <button id="btn-fases">Selecionar fase</button>
+        <div class="spacer"></div>
         <button id="btn-reiniciar">Reiniciar sala</button>
         <button id="btn-proximo" disabled>Próxima sala</button>
       </div>
+      <div style="margin-top:6px;color:#9fb1ff;font-size:13px">Atalho: <b>C</b> abre/fecha o Caderno.</div>
     </div>
 
     <div class="card">
@@ -48,57 +31,38 @@
 
     <div class="card">
       <div id="hud-msg"></div>
-      <canvas id="game-canvas" width="1024" height="520"></canvas>
-      <div style="margin-top:8px;color:#a8b3d9;font-size:13px">WASD para mover • E para interagir • ESC para Notebook/Puzzles</div>
+      <canvas id="game-canvas" width="1024" height="560"></canvas>
+      <div class="hint">WASD para mover • E para interagir • C para Caderno</div>
     </div>
   </div>
 
-  <!-- Modal Seleção de Fases -->
-  <div class="modal" id="modal-fases" aria-hidden="true">
+  <!-- Caderno (Notebook) -->
+  <div id="notebook" class="modal" aria-hidden="true">
     <div class="box">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3 style="margin:0">Selecionar Fase</h3>
-        <button id="btn-close-modal">Fechar</button>
+      <div class="box-head">
+        <div class="title">Caderno Virtual</div>
+        <button id="note-close">Fechar</button>
       </div>
-      <div class="grid" id="grid-fases"></div>
+      <div id="note-content"></div>
     </div>
   </div>
 
   <script type="module">
     import "./game/core.js";
+    import "./game/notebook.js";
     import "./game/entities.js";
     import "./game/levels.js";
     import "./game/main.js";
 
-    // Controles UI
+    // UI
     const btnReiniciar = document.getElementById("btn-reiniciar");
-    const btnProximo = document.getElementById("btn-proximo");
-    const btnFases = document.getElementById("btn-fases");
-    const modal = document.getElementById("modal-fases");
-    const closeModal = document.getElementById("btn-close-modal");
-    const grid = document.getElementById("grid-fases");
-
-    // popular seleção com base no número de níveis
-    addEventListener("game-ready", () => {
-      // Game e LEVELS estão no escopo global via modules
-      grid.innerHTML = "";
-      window.LEVELS.forEach((lvl, idx) => {
-        const i = idx+1;
-        const div = document.createElement("button");
-        div.className = "lvl-btn";
-        div.innerHTML = `<div><b>Sala ${i}</b></div><div class="badge">${lvl.name}</div>`;
-        div.onclick = () => { modal.classList.remove("on"); window.Game.start({startLevel:i}); };
-        grid.appendChild(div);
-      });
-    });
+    const btnProximo   = document.getElementById("btn-proximo");
 
     btnReiniciar.onclick = () => window.Game?.restartLevel();
     btnProximo.onclick   = () => window.Game?.nextLevel();
-    btnFases.onclick     = () => modal.classList.add("on");
-    closeModal.onclick   = () => modal.classList.remove("on");
 
-    // inicia jogo
-    window.Game?.start({startLevel: 2}); // comece testando a Sala 2
+    // inicia na Sala 2 pra você testar
+    window.Game?.start({startLevel: 2});
   </script>
 </body>
 </html>
