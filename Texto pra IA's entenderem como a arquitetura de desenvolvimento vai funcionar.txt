@@ -103,3 +103,69 @@ A arquitetura geral (Website + Jogo + Firebase) e o fluxo unidirecional (Jogo ->
 
 **Estado Atual:** A lógica de registro foi corrigida para criar o documento inicial no Firestore. A próxima etapa é testar este fluxo de **Registro**. Os erros de inicialização e referência (`invalid-api-key`, `db not defined`, `registerUser is not defined`, `Cannot access 'db' before initialization`) foram resolvidos.
 ---
+
+agora um relatório:
+**Relatório de Progresso - Logic-Encrypted TCC**
+
+**Data:** 17 de Outubro de 2025
+
+**Objetivo Inicial:**
+Implementar um sistema de salvamento de progresso para o jogo educacional Logic-Encrypted, utilizando uma arquitetura onde:
+1.  O **Website (Frontend)** lida com autenticação (Firebase Auth), carrega a versão correta do jogo (HTML5 exportado do GameMaker) em um iframe e salva o progresso no Firebase (Firestore).
+2.  O **Jogo (GameMaker)** sinaliza o progresso para o Website alterando o hash da URL (ex: `#save_level_X`).
+3.  O **Firebase (Backend)** armazena o progresso do usuário (campo `ultimoNivelConcluido` na coleção `jogadores`).
+
+**Passos Realizados e Estado Atual:**
+
+1.  **Configuração Inicial do Firebase (`firebase-init.js`):**
+    * Verificamos e corrigimos o arquivo `firebase-init.js`.
+    * Confirmamos que as chaves de API, `authDomain`, `projectId`, etc., foram copiadas corretamente do console do Firebase e substituíram os valores de exemplo.
+    * Confirmamos que `initializeApp`, `getAuth`, e `getFirestore` estão sendo chamados.
+    * Confirmamos que `auth` e `db` estão sendo exportados corretamente (`export { auth, db };`).
+    * Confirmamos que o `script.js` está sendo carregado com `type="module"` no `index.html`.
+    * **Estado:** A inicialização básica do Firebase está funcionando, sem erros de API Key.
+
+2.  **Correção de Erros de Importação (`script.js`):**
+    * Identificamos e corrigimos um erro (`Identifier 'doc' has already been declared`) causado pela importação duplicada das funções do Firestore de versões diferentes (9.0.0 e 10.3.1).
+    * **Solução:** Removemos a importação da versão 9.0.0 e consolidamos todas as funções necessárias (`getFirestore`, `doc`, `setDoc`, `getDoc`, `updateDoc`) na importação da versão 10.3.1.
+    * **Estado:** As importações do Firebase no `script.js` estão corretas e sem conflitos.
+
+3.  **Implementação do Registro com Save Inicial (`script.js`):**
+    * Modificamos a lógica dentro do `botaoCadastrar.addEventListener('click', ...)`.
+    * Adicionamos a palavra-chave `async` à função de callback do `.then()` do `createUserWithEmailAndPassword`.
+    * Dentro do `.then()`, adicionamos o código para:
+        * Obter a referência do Firestore (`const db = getFirestore();`).
+        * Criar um novo documento na coleção `jogadores` com o `uid` do usuário recém-criado.
+        * Definir os campos `email` e `ultimoNivelConcluido: 0` nesse documento usando `await setDoc(...)`.
+    * Corrigimos erros de referência (`registerUser is not defined`, `Cannot access 'db' before initialization`) garantindo que:
+        * Os `addEventListener` dos botões estão dentro de `DOMContentLoaded`.
+        * A referência `db` é obtida com `getFirestore()` *dentro* da lógica de clique do botão de cadastro, em vez de depender apenas da importação global.
+    * **Estado:** O código de registro está pronto para criar o usuário na autenticação E criar o documento inicial de progresso no Firestore.
+
+4.  **Implementação do Carregamento do Jogo (`script.js`):**
+    * Dentro da função `onAuthStateChanged`, no bloco `if (user)` (quando o login é detectado), adicionamos a lógica `carregarJogo`.
+    * Esta lógica:
+        * Busca o documento do usuário em `jogadores/{user.uid}`.
+        * Lê o valor de `ultimoNivelConcluido` (assume 0 se não encontrado).
+        * Calcula o caminho da versão do jogo (`game_versions/versao_{N+1}/index.html`).
+        * Define o atributo `src` do `iframe` com ID `game-iframe-container` para carregar a versão correta do jogo.
+    * **Estado:** A lógica para carregar a versão apropriada do jogo no login está implementada.
+
+5.  **Implementação do Salvamento de Progresso (`script.js`):**
+    * Adicionamos um `window.addEventListener('hashchange', ...)` no final do arquivo.
+    * Este ouvinte:
+        * Detecta mudanças no hash da URL que começam com `#save_level_`.
+        * Extrai o número do nível.
+        * Verifica se um usuário está logado.
+        * Usa `setDoc(..., { ultimoNivelConcluido: numero_nivel }, { merge: true })` para atualizar o progresso no Firestore.
+        * Executa `window.location.reload()` após salvar, para forçar o recarregamento da página e carregar a próxima versão do jogo.
+    * **Estado:** A lógica para detectar o sinal do jogo e salvar o progresso no Firebase está implementada.
+
+6.  **Ajustes no GameMaker:**
+    * **Mudança de Lógica:** Decidimos que o sinal de salvamento (`url_open`) deve ser enviado no **início** de cada sala de fase (`rm_faseX_cenario`), e não ao completar o puzzle.
+    * **Implementação:** Adicionamos a linha `url_open("#save_level_X");` (com X sendo o número da fase) no **Código de Criação da Sala** (`Room Creation Code`) de todas as 10 salas de fase (`rm_fase1_cenario` até `rm_fase10_cenario`).
+    * **Scripts Ignorados:** Reafirmamos que `obj_gerenciador_site`, `scr_save_progress`, `scr_load_progress` e lógicas de save local não são usados.
+    * **Estado:** O GameMaker está pronto para enviar os sinais corretos no momento correto (início da fase).
+
+**Próximo Passo Imediato:**
+* Testar o fluxo de **Registro de Novo Usuário** para confirmar que a conta é criada na Autenticação e o documento inicial (`ultimoNivelConcluido: 0`) é criado corretamente no Firestore.
