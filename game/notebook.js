@@ -1,48 +1,21 @@
-// Conteúdo por “página” coletada
+// Conteúdo enxuto — cada sala tem 1 página
 const PAGES = {
   variaveis: {
-    title: "Variáveis",
+    title: "Variáveis (introdução)",
     body: `
-Uma <b>variável</b> guarda um valor para usar depois.
+Uma variável guarda um valor para usar depois.
 
-<code>let vida = 3;
-vida = vida - 1;  // 2</code>`
-  },
-  condicionais: {
-    title: "Condicionais (if/else)",
-    body: `
-Use <b>if</b> para decidir caminhos.
-
-<code>function podeEntrar(nivel){
-  if (nivel >= 2) {
-    return "liberado";
-  } else {
-    return "bloqueado";
-  }
-}</code>`
-  },
-  operadores: {
-    title: "Operadores (==, %, &&, ||)",
-    body: `
-Comparações e operações úteis:
-
-<code>// Igualdade
-if (porta === "fechada") { /* ... */ }
-
-// Módulo (resto)
-const resto = n % 2; // par == 0
-
-// E / Ou
-if (temChave && terminalOK) { /* ... */ }
-if (temMapa || pista) { /* ... */ }</code>`
+<code>let chaves = 0;  // começa sem chaves
+chaves = chaves + 1; // agora tenho 1</code>`
   },
   modulo: {
-    title: "Módulo (%) e Par/Ímpar",
+    title: "Módulo (%) — Par/Ímpar",
     body: `
-O operador <b>%</b> retorna o resto da divisão. Números pares têm <kbd>n % 2 == 0</kbd>.
+O operador <b>%</b> devolve o resto da divisão.  
+Se <kbd>n % 2 === 0</kbd>, o número é <b>par</b>.
 
-<code>function parOuImpar(n){
-  return (n % 2 === 0) ? "par" : "ímpar";
+<code>function ehPar(n){
+  return (n % 2 === 0);
 }</code>`
   }
 };
@@ -54,16 +27,12 @@ const closeBtn = document.getElementById("note-close");
 function render(notes){
   const arr = [...notes];
   if (!arr.length){
-    noteContent.innerHTML = `<p>Você ainda não coletou nenhuma página. Explore a cripta para encontrar pistas!</p>`;
+    noteContent.innerHTML = `<p>Você ainda não coletou a página desta sala. Explore para encontrar!</p>`;
     return;
   }
   noteContent.innerHTML = arr.map(k=>{
-    const p = PAGES[k];
-    if (!p) return "";
-    return `
-      <h3>${p.title}</h3>
-      <div class="note-body">${p.body}</div>
-    `;
+    const p = PAGES[k]; if (!p) return "";
+    return `<h3>${p.title}</h3><div class="note-body">${p.body}</div>`;
   }).join("<hr/>");
 }
 
@@ -78,7 +47,6 @@ export const Notebook = {
 
 closeBtn.onclick = ()=>Notebook.close();
 
-// Atalho “C”
 addEventListener("keydown", (e)=>{
   if (e.key.toLowerCase()==="c") {
     e.preventDefault();
@@ -86,18 +54,20 @@ addEventListener("keydown", (e)=>{
   }
 });
 
-// expõe pro jogo
 window.PuzzleEngine = {
   openNotebook(notes){ Notebook.setNotes(notes); Notebook.open(); },
+
+  // cada sala exige sua própria página
   openForLevel(levelId, cb){
-    // simples stub: abre notebook e simula puzzle. Você pode plugar um puzzle real depois.
-    Notebook.open();
-    // Exemplo: para sala 2, exige que o player tenha "condicionais" e "operadores"
-    if (levelId===2){
-      const ok = Notebook.notes.has("condicionais") && Notebook.notes.has("operadores");
-      cb?.({ok});
-    } else {
-      cb?.({ok:true});
+    if (levelId===1){
+      cb?.({ok:true}); // tutorial/introdução — sem checagem
+      return;
     }
+    if (levelId===2){
+      const ok = Notebook.notes.has("modulo");
+      cb?.({ok});
+      return;
+    }
+    cb?.({ok:true});
   }
 };
