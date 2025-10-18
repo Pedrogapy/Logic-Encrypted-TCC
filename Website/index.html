@@ -1,45 +1,55 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logic-Encrypted</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logic-Encrypted</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Bem-vindo ao Logic-Encrypted</h1>
+  <header>
+    <h1>Logic-Encrypted</h1>
+    <p class="subtitle">Jogo educacional para lógica de programação</p>
+  </header>
 
-    <p>Status da Conexão:</p>
-    <p id="status-firebase" style="font-weight: bold;">Verificando...</p>
-    <hr>
+  <section class="status">
+    <p><strong>Status da Conexão Firebase:</strong> <span id="status-firebase">Verificando...</span></p>
+  </section>
 
-    <div id="area-nao-logada">
-        <h2>Crie sua conta</h2>
-        <input type="email" id="campo-email" placeholder="Digite seu e-mail">
-        <br><br>
-        <input type="password" id="campo-senha" placeholder="Digite sua senha">
-        <br><br>
-        <button id="botao-cadastrar">Cadastrar</button>
-        <p id="mensagem-erro" style="color: red;"></p>
-        <hr>
-
-        <h2>Já tem uma conta? Faça o login</h2>
-        <input type="email" id="login-email" placeholder="Seu e-mail">
-        <br><br>
-        <input type="password" id="login-senha" placeholder="Sua senha">
-        <br><br>
-        <button id="botao-login">Entrar</button>
-        <p id="mensagem-login-erro" style="color: red;"></p>
+  <section id="area-nao-logada">
+    <h2>Crie sua conta</h2>
+    <div class="card">
+      <label>E-mail</label>
+      <input id="campo-email" type="email" placeholder="seu@email.com" />
+      <label>Senha</label>
+      <input id="campo-senha" type="password" placeholder="********" />
+      <button id="botao-cadastrar">Cadastrar</button>
+      <p id="mensagem-erro" class="error"></p>
     </div>
 
-    <div id="area-logada" style="display: none;">
-        <h2>Bem-vindo, <span id="email-usuario"></span>!</h2>
-        <button id="botao-sair">Sair</button>
-        <hr>
-        </div>
+    <h2>Ou entre</h2>
+    <div class="card">
+      <label>E-mail</label>
+      <input id="login-email" type="email" placeholder="seu@email.com" />
+      <label>Senha</label>
+      <input id="login-senha" type="password" placeholder="********" />
+      <button id="botao-login">Entrar</button>
+      <p id="mensagem-login-erro" class="error"></p>
+    </div>
+  </section>
 
-    <script type="module" src="firebase-init.js"></script>
-    <script type="module" src="script.js"></script>
+  <section id="area-logada" style="display:none;">
+    <div class="row">
+      <h2>Bem-vindo, <span id="email-usuario"></span></h2>
+      <button id="botao-sair" class="secondary">Sair</button>
+    </div>
+    <hr>
+    <h3>Jogo</h3>
+    <p>Ao concluir uma fase, seu progresso é salvo automaticamente.</p>
+    <iframe id="game-iframe-container" title="Logic-Encrypted (HTML5)" loading="lazy"></iframe>
+  </section>
 
-    </body>
+  <script type="module" src="firebase-init.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
 </html>
