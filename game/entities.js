@@ -1,90 +1,77 @@
-// entities.js — Player, Porta, Terminal, Página, Inimigo
-import { Input, rectsIntersect, resolveMoveAABB, TILE } from "./core.js";
+import {Input, clamp, rectsIntersect} from "./core.js";
 
-export class Entity {
-  constructor(x,y,w,h){ this.x=x; this.y=y; this.w=w; this.h=h; this.dead=false; }
+/* ===== Player ===== */
+export class Player {
+  constructor(x,y){
+    this.x=x; this.y=y; this.w=24; this.h=24;
+    this.speed=2.2; this.color="#5fdcb1"; this.game=null;
+  }
   get bbox(){ return {x:this.x,y:this.y,w:this.w,h:this.h}; }
-  update(_){} draw(_){} onOverlap(_) {}
-}
 
-export class Player extends Entity {
-  constructor(x,y){ super(x,y,24,24); this.speed=3; this.color="#5b7cff"; this.vx=0; this.vy=0; }
   update(game){
-    this.vx = (Input.down("ArrowRight","d","D")?this.speed:0) - (Input.down("ArrowLeft","a","A")?this.speed:0);
-    this.vy = (Input.down("ArrowDown","s","S")?this.speed:0) - (Input.down("ArrowUp","w","W")?this.speed:0);
-    const blockers = game.entities.filter(e => e.solid && (!e.open)); // porta fechada, etc
-    const m = resolveMoveAABB(this, game.map, this.vx, this.vy, blockers.map(b=>b.bbox));
-    this.x=m.x; this.y=m.y;
+    const entities = game?.entities ?? [];
 
-    // Interação
-    if (Input.down("e","E")) game.tryInteract(this);
-  }
-  draw(ctx){
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x, this.y, this.w, this.h);
-  }
-}
+    let dx=0, dy=0;
+    if(Input.isDown("w") || Input.isDown("arrowup")) dy-=1;
+    if(Input.isDown("s") || Input.isDown("arrowdown")) dy+=1;
+    if(Input.isDown("a") || Input.isDown("arrowleft")) dx-=1;
+    if(Input.isDown("d") || Input.isDown("arrowright")) dx+=1;
+    const len = Math.hypot(dx,dy) || 1;
+    dx = dx/len*this.speed; dy=dy/len*this.speed;
 
-export class Door extends Entity {
-  constructor(x,y,dir="v"){ super(x,y, dir==="h"?TILE*2:TILE, dir==="h"?TILE:TILE*2); this.solid = true; this.open = false; this.dir=dir; }
-  draw(ctx){
-    ctx.fillStyle = this.open ? "#2a693a" : "#6b3f2b";
-    ctx.fillRect(this.x, this.y, this.w, this.h);
-    if (!this.open){
-      ctx.strokeStyle="#000"; ctx.lineWidth=2;
-      ctx.strokeRect(this.x+3,this.y+3,this.w-6,this.h-6);
-    } else {
-      // “aberta” visualmente
-      ctx.clearRect(this.x+4,this.y+4,this.w-8,this.h-8);
+    // movimentação com colisão
+    this.x += dx;
+    for(const s of entities.filter(e=>e.solid)) if(rectsIntersect(this.bbox,s.bbox)){
+      if(dx>0) this.x = s.x - this.w; else if(dx<0) this.x = s.x+s.w;
     }
+    this.y += dy;
+    for(const s of entities.filter(e=>e.solid)) if(rectsIntersect(this.bbox,s.bbox)){
+      if(dy>0) this.y = s.y - this.h; else if(dy<0) this.y = s.y+s.h;
+    }
+
+    if (Input.isDown("e")) game.tryInteract?.(this);
+  }
+
+  draw(ctx){
+    ctx.fillStyle=this.color; ctx.fillRect(this.x,this.y,this.w,this.h);
   }
 }
 
-export class Terminal extends Entity {
-  constructor(x,y, puzzleId){ super(x,y,TILE,TILE); this.puzzleId = puzzleId; }
+/* ===== Porta ===== */
+export class Door {
+  constructor(x,y,w,h){ this.x=x; this.y=y; this.w=w; this.h=h; this.open=false; }
+  get solid(){ return !this.open; }
+  get bbox(){return {x:this.x,y:this.y,w:this.w,h:this.h};}
   draw(ctx){
-    ctx.fillStyle="#224d7a"; ctx.fillRect(this.x,this.y,this.w,this.h);
-    ctx.fillStyle="#9ad0ff"; ctx.fillRect(this.x+5,this.y+5,this.w-10,this.h-10);
+    ctx.fillStyle = this.open ? "#2ecc71" : "#9b59b6";
+    ctx.fillRect(this.x,this.y,this.w,this.h);
   }
+}
+
+/* ===== Terminal ===== */
+export class Terminal {
+  constructor(x,y){ this.x=x; this.y=y; this.w=22; this.h=22; this.color="#ffd166"; }
+  get bbox(){return {x:this.x,y:this.y,w:this.w,h:this.h};}
   use(game){
-    // abre o modal do puzzle correspondente
-    if (window.PuzzleEngine && typeof window.PuzzleEngine.open==="function"){
-      window.PuzzleEngine.open(this.puzzleId, async (passed)=>{
-        if (passed){
-          game.unlockDoor(); // destravar porta desta sala
-          game.setHUD("Porta destrancada! Vá até ela para seguir.");
-        }
-      });
-    }
+    window.PuzzleEngine?.openForLevel?.(game.world.id, result=>{
+      if(result?.ok){ game.unlockDoor(); game.setHUD("Porta desbloqueada! Vá até a saída."); }
+      else { game.setHUD("Resposta incorreta. Estude a página e tente de novo."); }
+    });
   }
+  draw(ctx){ ctx.fillStyle=this.color; ctx.fillRect(this.x,this.y,this.w,this.h); }
 }
 
-export class PageNote extends Entity {
-  constructor(x,y, noteKey){ super(x,y,TILE,TILE); this.noteKey = noteKey; this.collected=false; }
-  draw(ctx){
-    ctx.fillStyle = this.collected ? "rgba(255,255,255,0.15)" : "#d2b48c";
-    ctx.fillRect(this.x+6,this.y+6,this.w-12,this.h-12);
-  }
-  onOverlap(game, other){
-    if (!this.collected && other instanceof Player){
-      this.collected = true;
-      game.collectNote(this.noteKey);
-    }
-  }
-}
-
-export class EnemyPatrol extends Entity {
-  constructor(x,y,path=[{x,y}],speed=1.6){ super(x,y,24,24); this.speed=speed; this.path=path; this.idx=0; }
-  update(game){
-    const p = this.path[this.idx];
-    const dx = Math.sign(p.x - this.x) * this.speed;
-    const dy = Math.sign(p.y - this.y) * this.speed;
-    const m = resolveMoveAABB(this, game.map, dx, dy, game.entities.filter(e=>e.solid && !e.open).map(e=>e.bbox));
-    this.x=m.x; this.y=m.y;
-    if (Math.abs(this.x - p.x) < 2 && Math.abs(this.y - p.y) < 2) this.idx = (this.idx+1)%this.path.length;
-    if (rectsIntersect(this.bbox, game.player.bbox)) game.restartLevel();
+/* ===== Página (coletável) ===== */
+export class Page {
+  constructor(x,y,key){ this.x=x; this.y=y; this.w=18; this.h=18; this.key=key; this.collected=false; }
+  get bbox(){return {x:this.x,y:this.y,w:this.w,h:this.h};}
+  onOverlap(game,player){
+    if(this.collected) return;
+    this.collected=true;
+    game.collectNote?.(this.key);
   }
   draw(ctx){
-    ctx.fillStyle="#ff7675"; ctx.fillRect(this.x, this.y, this.w, this.h);
+    if(this.collected) return;
+    ctx.fillStyle="#69f"; ctx.fillRect(this.x,this.y,this.w,this.h);
   }
 }

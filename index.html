@@ -1,111 +1,104 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!doctype html>
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Logic-Encrypted — Cripta</title>
-  <link rel="stylesheet" href="style.css"/>
-
-  <!-- Firebase + app -->
-  <script type="module" src="firebase-init.js"></script>
-  <script type="module" src="script.js"></script>
-
-  <!-- Jogo (módulos) -->
-  <script type="module" src="game/core.js"></script>
-  <script type="module" src="game/entities.js"></script>
-  <script type="module" src="game/levels.js"></script>
-  <script type="module" src="game/main.js"></script>
-
-  <!-- Puzzles (engine + fases) -->
-  <script type="module" src="puzzles/puzzles.js"></script>
-  <script type="module" src="puzzles/engine.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body{background:#0c0f16;color:#e9edf1;font-family:system-ui,Arial,Segoe UI,Roboto,sans-serif}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+    h1{font-weight:700;margin:0 0 8px}
+    .card{background:#111624;border:1px solid #1c2336;border-radius:12px;padding:16px;margin:14px 0}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    button{background:#2c3654;color:#fff;border:1px solid #3a4670;border-radius:10px;padding:10px 14px;cursor:pointer}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    #game-canvas{display:block;background:#0a0f19;border:1px solid #1d2741;border-radius:12px;width:100%;height:520px}
+    #hud-msg{margin:8px 0 0 2px;color:#c9d4ff;font-size:14px}
+    /* modal de fases */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
+    .modal.on{display:flex}
+    .modal .box{background:#0f1422;border:1px solid #243053;border-radius:14px;padding:16px;width:min(500px,92vw)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}
+    .lvl-btn{padding:12px;text-align:center;border-radius:10px;border:1px solid #394874;background:#18203a;color:#e9edf1;cursor:pointer}
+    .badge{font-size:12px;color:#90a0ff}
+  </style>
 </head>
 <body>
-  <header>
+  <div class="wrap">
     <h1>Logic-Encrypted</h1>
-    <p class="subtitle">Ande pela cripta, estude as páginas, resolva o terminal e abra a porta.</p>
-  </header>
-
-  <section class="status">
-    <p><strong>Status Firebase:</strong> <span id="status-firebase">Verificando...</span></p>
-  </section>
-
-  <!-- Área não logada -->
-  <section id="area-nao-logada">
-    <div class="card">
-      <h2>Criar conta</h2>
-      <label>E-mail</label>
-      <input id="campo-email" type="email" placeholder="seu@email.com"/>
-      <label>Senha</label>
-      <input id="campo-senha" type="password" placeholder="********"/>
-      <button id="botao-cadastrar">Cadastrar</button>
-      <p id="mensagem-erro" class="error"></p>
-    </div>
+    <p>Ande pela cripta, estude as páginas, resolva o terminal e abra a porta.</p>
 
     <div class="card">
-      <h2>Entrar</h2>
-      <label>E-mail</label>
-      <input id="login-email" type="email" placeholder="seu@email.com"/>
-      <label>Senha</label>
-      <input id="login-senha" type="password" placeholder="********"/>
-      <button id="botao-login">Entrar</button>
-      <p id="mensagem-login-erro" class="error"></p>
-    </div>
-  </section>
-
-  <!-- Área logada + jogo -->
-  <section id="area-logada" style="display:none;">
-    <div class="row">
-      <h2>Bem-vindo, <span id="email-usuario"></span></h2>
-      <button id="botao-sair" class="secondary">Sair</button>
-    </div>
-
-    <div class="card">
-      <h3>Seu progresso</h3>
-      <p>Último nível concluído: <strong id="progresso-label">0</strong></p>
-    </div>
-
-    <div class="game-wrap card">
-      <div class="game-toolbar">
-        <span id="hud-msg" class="muted">Use WASD/Setas para se mover. <b>E</b> interage.</span>
-        <div class="spacer"></div>
-        <button id="btn-reiniciar" class="secondary">Reiniciar sala</button>
+      <div id="status">Status Firebase: <b>Conectado com Sucesso!</b></div>
+      <div class="row" style="margin-top:10px">
+        <div id="user">Bem-vindo, <b>pedro.g.a.pereira@unirv.edu.br</b></div>
+        <button id="btn-fases">Selecionar fase</button>
+        <button id="btn-reiniciar">Reiniciar sala</button>
         <button id="btn-proximo" disabled>Próxima sala</button>
       </div>
-      <canvas id="game-canvas" width="960" height="576"></canvas>
     </div>
-  </section>
 
-  <!-- Modal do Terminal (puzzle) -->
-  <div id="modal-puzzle" class="modal" style="display:none;">
-    <div class="modal-content">
-      <div class="modal-head">
-        <h3 id="pz-title">Terminal</h3>
-        <button id="pz-close" class="secondary">Fechar</button>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><b>Seu progresso</b></div>
+        <div>Último nível concluído: <b id="progresso-label">1</b></div>
       </div>
-      <p id="pz-desc" class="muted"></p>
-      <div class="editor-toolbar">
-        <span class="muted">Edite o código, depois Execute os testes.</span>
-        <div class="spacer"></div>
-        <button id="pz-run">Executar testes</button>
-      </div>
-      <textarea id="pz-code" spellcheck="false"></textarea>
-      <div class="result-wrap">
-        <h4>Feedback</h4>
-        <pre id="pz-out" class="terminal">—</pre>
-      </div>
+    </div>
+
+    <div class="card">
+      <div id="hud-msg"></div>
+      <canvas id="game-canvas" width="1024" height="520"></canvas>
+      <div style="margin-top:8px;color:#a8b3d9;font-size:13px">WASD para mover • E para interagir • ESC para Notebook/Puzzles</div>
     </div>
   </div>
 
-  <!-- Modal Caderno Virtual (páginas encontradas) -->
-  <div id="modal-caderno" class="modal" style="display:none;">
-    <div class="modal-content">
-      <div class="modal-head">
-        <h3>Caderno Virtual</h3>
-        <button id="btn-fechar-caderno" class="secondary">Fechar</button>
+  <!-- Modal Seleção de Fases -->
+  <div class="modal" id="modal-fases" aria-hidden="true">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Selecionar Fase</h3>
+        <button id="btn-close-modal">Fechar</button>
       </div>
-      <div id="caderno-conteudo" class="caderno"></div>
+      <div class="grid" id="grid-fases"></div>
     </div>
   </div>
+
+  <script type="module">
+    import "./game/core.js";
+    import "./game/entities.js";
+    import "./game/levels.js";
+    import "./game/main.js";
+
+    // Controles UI
+    const btnReiniciar = document.getElementById("btn-reiniciar");
+    const btnProximo = document.getElementById("btn-proximo");
+    const btnFases = document.getElementById("btn-fases");
+    const modal = document.getElementById("modal-fases");
+    const closeModal = document.getElementById("btn-close-modal");
+    const grid = document.getElementById("grid-fases");
+
+    // popular seleção com base no número de níveis
+    addEventListener("game-ready", () => {
+      // Game e LEVELS estão no escopo global via modules
+      grid.innerHTML = "";
+      window.LEVELS.forEach((lvl, idx) => {
+        const i = idx+1;
+        const div = document.createElement("button");
+        div.className = "lvl-btn";
+        div.innerHTML = `<div><b>Sala ${i}</b></div><div class="badge">${lvl.name}</div>`;
+        div.onclick = () => { modal.classList.remove("on"); window.Game.start({startLevel:i}); };
+        grid.appendChild(div);
+      });
+    });
+
+    btnReiniciar.onclick = () => window.Game?.restartLevel();
+    btnProximo.onclick   = () => window.Game?.nextLevel();
+    btnFases.onclick     = () => modal.classList.add("on");
+    closeModal.onclick   = () => modal.classList.remove("on");
+
+    // inicia jogo
+    window.Game?.start({startLevel: 2}); // comece testando a Sala 2
+  </script>
 </body>
 </html>

@@ -1,97 +1,63 @@
-// levels.js — salas da cripta (grid de 32px)
-// Legenda: '#' = parede, 'S' = spawn do jogador, '.' piso
-// Objetos são definidos em "objects": Door/Terminal/PageNote/EnemyPatrol
+import {Door, Page, Terminal, Player} from "./entities.js";
 
-import { TILE, Tilemap } from "./core.js";
-import { Player, Door, Terminal, PageNote, EnemyPatrol } from "./entities.js";
-
+/** Descreve cada sala e gera o mundo (mapa + entidades) */
 export const LEVELS = [
-  {
-    id:1,
-    name:"Corredor Inicial",
-    grid:[
-      "############################",
-      "#S.................#.......#",
-      "#........###.......#.......#",
-      "#........#.#.......#.......#",
-      "#........#.#...............#",
-      "#........#.#.......#..T....#",
-      "#........###.......#.......#",
-      "#..................#...D...#",
-      "############################",
-    ],
-    objects:[
-      { name:"Door", x:TILE*23, y:TILE*7, dir:"v" },
-      { name:"Terminal", x:TILE*20, y:TILE*5, puzzleId:1 },
-      { name:"PageNote", x:TILE*6,  y:TILE*1, note:"ifelse" }
-    ],
-    enemies:[]
+  { // Sala 1 — tutorial
+    id:1, name:"Corredor de Introdução",
+    map:{ w:960, h:480, walls:[ {x:0,y:0,w:960,h:20},{x:0,y:460,w:960,h:20},{x:0,y:0,w:20,h:480},{x:940,y:0,w:20,h:480} ] },
+    player:{x:80,y:380},
+    door:{x:900,y:380,w:24,h:60},
+    terminal:{x:520,y:360},
+    pages:[{x:200,y:380,key:"variaveis"}]
   },
-  {
-    id:2,
-    name:"Galeria com Patrulha",
-    grid:[
-      "############################",
-      "#S.............###.........#",
-      "#..............#.#........#",
-      "#..........T...#.#........#",
-      "#..............#.#........#",
-      "#..............###........#",
-      "#..........................#",
-      "#...............D..........#",
-      "############################",
-    ],
-    objects:[
-      { name:"Door", x:TILE*15, y:TILE*7, dir:"h" },
-      { name:"Terminal", x:TILE*12, y:TILE*3, puzzleId:2 },
-      { name:"PageNote", x:TILE*3,  y:TILE*1, note:"modulo" }
-    ],
-    enemies:[
-      { x:TILE*8, y:TILE*6, path:[{x:TILE*8,y:TILE*2},{x:TILE*20,y:TILE*6}] }
-    ]
-  },
-  {
-    id:3,
-    name:"Câmara do Somatório",
-    grid:[
-      "############################",
-      "#S...............########..#",
-      "#................#......#..#",
-      "#.........T......#......#..#",
-      "#................#......#..#",
-      "#................########..#",
-      "#..........................#",
-      "#......................D...#",
-      "############################",
-    ],
-    objects:[
-      { name:"Door", x:TILE*22, y:TILE*7, dir:"v" },
-      { name:"Terminal", x:TILE*9,  y:TILE*3, puzzleId:3 },
-      { name:"PageNote", x:TILE*2,  y:TILE*6, note:"loops" }
-    ],
-    enemies:[
-      { x:TILE*18, y:TILE*2, path:[{x:TILE*18,y:TILE*2},{x:TILE*18,y:TILE*6}] }
-    ]
+  { // Sala 2 — Galeria
+    id:2, name:"Galeria da Lógica",
+    map:{
+      w:960, h:480,
+      walls:[
+        {x:0,y:0,w:960,h:20},{x:0,y:460,w:960,h:20},{x:0,y:0,w:20,h:480},{x:940,y:0,w:20,h:480},
+        {x:260,y:140,w:40,h:200},{x:460,y:100,w:40,h:260},{x:660,y:140,w:40,h:200}
+      ]
+    },
+    player:{x:80,y:380},
+    door:{x:900,y:60,w:24,h:60},
+    terminal:{x:760,y:340},
+    pages:[{x:140,y:80,key:"condicionais"},{x:340,y:420,key:"operadores"}]
   }
 ];
 
 export function buildLevel(def){
-  const map = new Tilemap(def.grid);
-  let spawn = { x:TILE*1+4, y:TILE*1+4 };
-  for (let y=0;y<def.grid.length;y++){
-    for (let x=0;x<def.grid[y].length;x++){
-      if (def.grid[y][x] === "S") spawn = { x:x*TILE+4, y:y*TILE+4 };
+  const map = {
+    w:def.map.w, h:def.map.h, walls:def.map.walls,
+    draw(ctx){
+      const grad = ctx.createLinearGradient(0,0,0,this.h);
+      grad.addColorStop(0,"#0d1220"); grad.addColorStop(1,"#0b1020");
+      ctx.fillStyle = grad; ctx.fillRect(0,0,this.w,this.h);
+      ctx.fillStyle="#1f2945";
+      for(const r of this.walls) ctx.fillRect(r.x,r.y,r.w,r.h);
     }
-  }
+  };
+
   const entities = [];
-  (def.objects||[]).forEach(o=>{
-    if (o.name==="Door"){ const d = new Door(o.x,o.y,o.dir||"v"); entities.push(d); }
-    if (o.name==="Terminal"){ entities.push(new Terminal(o.x,o.y,o.puzzleId)); }
-    if (o.name==="PageNote"){ entities.push(new PageNote(o.x,o.y,o.note)); }
-  });
-  (def.enemies||[]).forEach(e=>{
-    entities.push(new EnemyPatrol(e.x, e.y, e.path||[{x:e.x,y:e.y}], e.speed||1.6));
-  });
-  const player = new Player(spawn.x, spawn.y);
-  return { map, entities, player, id:def.id, name:def.name };
+  for(const r of def.map.walls){
+    entities.push({
+      x:r.x,y:r.y,w:r.w,h:r.h, solid:true,
+      get bbox(){return {x:this.x,y:this.y,w:this.w,h:this.h}},
+      draw(){}
+    });
+  }
+
+  if(def.pages) for(const p of def.pages) entities.push(new Page(p.x,p.y,p.key));
+  if(def.terminal) entities.push(new Terminal(def.terminal.x, def.terminal.y));
+  let door=null;
+  if(def.door){ door = new Door(def.door.x, def.door.y, def.door.w, def.door.h); entities.push(door); }
+
+  const player = new Player(def.player.x, def.player.y);
+
+  return {
+    id:def.id, name:def.name,
+    map, entities, player
+  };
 }
+
+window.LEVELS = LEVELS;
