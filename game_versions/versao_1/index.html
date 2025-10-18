@@ -5,6 +5,16 @@
     
 
     <head>
+        <!-- 1) relativo (mesma pasta do HTML do jogo) -->
+        <script src="firebase-api.js?v=7"></script>
+
+        <!-- 2) fallback absoluto com o prefixo do repositório -->
+        <script>
+          if (typeof window.firebase_init !== 'function') {
+            document.write('<script src="/Logic-Encrypted-TCC/game_versions/versao_1/firebase-api.js?v=7"><\/script>');
+          }
+        </script>
+
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name ="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
