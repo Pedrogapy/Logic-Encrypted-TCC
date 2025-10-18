@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Logic-Encrypted</title>
+  <title>Logic-Encrypted — Puzzles de Lógica</title>
   <link rel="stylesheet" href="style.css"/>
 
-  <!-- Firebase + app (ES modules). Mantenha seu firebase-init.js original. -->
+  <!-- Firebase / app -->
   <script type="module" src="firebase-init.js"></script>
   <script type="module" src="script.js"></script>
+
+  <!-- Módulos do jogo (puzzles) -->
+  <script type="module" src="puzzles/engine.js"></script>
 </head>
 <body>
   <header>
     <h1>Logic-Encrypted</h1>
-    <p class="subtitle">Jogo educacional para lógica de programação</p>
+    <p class="subtitle">Jogo educacional para ensino de lógica — corrigindo código para avançar</p>
   </header>
 
   <section class="status">
     <p><strong>Status Firebase:</strong> <span id="status-firebase">Verificando...</span></p>
   </section>
 
+  <!-- Área não logada -->
   <section id="area-nao-logada">
     <div class="card">
       <h2>Criar conta</h2>
@@ -42,15 +46,66 @@
     </div>
   </section>
 
+  <!-- Área logada + jogo -->
   <section id="area-logada" style="display:none;">
     <div class="row">
       <h2>Bem-vindo, <span id="email-usuario"></span></h2>
       <button id="botao-sair" class="secondary">Sair</button>
     </div>
-    <hr/>
-    <h3>Jogo</h3>
-    <p>Ao concluir uma fase, seu progresso é salvo automaticamente.</p>
-    <iframe id="game-iframe-container" title="Logic-Encrypted (HTML5)" loading="lazy"></iframe>
+
+    <div class="card">
+      <h3>Seu progresso</h3>
+      <p>Último nível concluído: <strong id="progresso-label">0</strong></p>
+    </div>
+
+    <!-- Seleção de fases (apenas as desbloqueadas) -->
+    <div class="card" id="seletor-fases" style="display:none;">
+      <h3>Fases desbloqueadas</h3>
+      <div id="lista-fases" class="fases-grid"></div>
+    </div>
+
+    <!-- Puzzle -->
+    <div class="card">
+      <div class="puzzle-header">
+        <div>
+          <h3 id="puzzle-titulo">Título</h3>
+          <p id="puzzle-descricao" class="muted">Descrição</p>
+        </div>
+        <div class="puzzle-actions">
+          <button id="btn-caderno" class="secondary">Caderno Virtual</button>
+        </div>
+      </div>
+
+      <div class="editor-wrap">
+        <div class="editor-toolbar">
+          <span class="muted">Edite o código e clique em “Executar testes”.</span>
+          <div class="spacer"></div>
+          <button id="btn-executar">Executar testes</button>
+        </div>
+        <textarea id="editor-codigo" spellcheck="false"></textarea>
+      </div>
+
+      <div class="result-wrap">
+        <h4>Feedback</h4>
+        <pre id="saida-teste" class="terminal">—</pre>
+      </div>
+
+      <div class="puzzle-footer">
+        <button id="btn-reiniciar" class="secondary">Reiniciar fase</button>
+        <button id="btn-proximo" disabled>Próxima fase</button>
+      </div>
+    </div>
   </section>
+
+  <!-- Modal Caderno Virtual -->
+  <div id="modal-caderno" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h3>Caderno Virtual</h3>
+        <button id="btn-fechar-caderno" class="secondary">Fechar</button>
+      </div>
+      <div id="caderno-conteudo" class="caderno"></div>
+    </div>
+  </div>
 </body>
 </html>

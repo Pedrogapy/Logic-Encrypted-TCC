@@ -7,106 +7,88 @@ import {
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js";
 import { auth, db } from "./firebase-init.js";
 
-/**
- * Como o jogo não recebe mensagens externas, a progressão é por versões.
- * Ao fazer login, buscamos "ultimoNivelConcluido" no Firestore e carregamos
- * a versão correspondente (nivel+1), limitado a MAX_VERSAO.
- */
-const MAX_VERSAO = 10;
-
 const $ = (id) => document.getElementById(id);
 const statusEl       = $("status-firebase");
-const campoEmail     = $("campo-email");
-const campoSenha     = $("campo-senha");
-const botaoCadastrar = $("botao-cadastrar");
-const msgErro        = $("mensagem-erro");
-const loginEmail     = $("login-email");
-const loginSenha     = $("login-senha");
-const botaoLogin     = $("botao-login");
-const msgLoginErro   = $("mensagem-login-erro");
 const areaNaoLogada  = $("area-nao-logada");
 const areaLogada     = $("area-logada");
 const emailUsuario   = $("email-usuario");
+const progressoLabel = $("progresso-label");
 const botaoSair      = $("botao-sair");
-const gameFrame      = $("game-iframe-container");
 
-statusEl.textContent = (auth && db) ? "Conectado com Sucesso!" : "Falhou a conexão.";
+statusEl.textContent = (auth && db) ? "Conectado com Sucesso!" : "Falha ao iniciar Firebase.";
 
-botaoCadastrar.addEventListener("click", async () => {
-  msgErro.textContent = "";
+window.GameBridge = {
+  user: null,
+  async getProgress(uid){
+    try {
+      const s = await getDoc(doc(db, "jogadores", uid));
+      if (s.exists() && typeof s.data().ultimoNivelConcluido === "number") return s.data().ultimoNivelConcluido;
+    } catch(_) {}
+    return 0;
+  },
+  async saveProgress(uid, level){
+    try {
+      const snap = await getDoc(doc(db, "jogadores", uid));
+      let cur = 0;
+      if (snap.exists() && typeof snap.data().ultimoNivelConcluido === "number") cur = snap.data().ultimoNivelConcluido;
+      const novo = Math.max(cur, level);
+      await setDoc(doc(db, "jogadores", uid), { ultimoNivelConcluido: novo }, { merge: true });
+      return novo;
+    } catch (e) {
+      console.error("Falha ao salvar progresso:", e);
+      return null;
+    }
+  }
+};
+
+// criar conta
+document.getElementById("botao-cadastrar")?.addEventListener("click", async () => {
+  const email = document.getElementById("campo-email").value;
+  const senha = document.getElementById("campo-senha").value;
+  const msg = document.getElementById("mensagem-erro");
+  msg.textContent = "";
   try {
-    const cred = await createUserWithEmailAndPassword(auth, campoEmail.value, campoSenha.value);
-    await setDoc(doc(db, "jogadores", cred.user.uid), {
-      email: cred.user.email,
-      ultimoNivelConcluido: 0
-    }, { merge: true });
-    campoEmail.value = "";
-    campoSenha.value = "";
+    const cred = await createUserWithEmailAndPassword(auth, email, senha);
+    await setDoc(doc(db, "jogadores", cred.user.uid), { email: cred.user.email, ultimoNivelConcluido: 0 }, { merge: true });
   } catch (e) {
-    if (e.code === "auth/email-already-in-use") msgErro.textContent = "E-mail já em uso.";
-    else if (e.code === "auth/weak-password") msgErro.textContent = "Senha precisa de 6+ caracteres.";
-    else msgErro.textContent = "Erro ao criar conta.";
+    msg.textContent = e.code || "Erro ao criar conta.";
   }
 });
 
-botaoLogin.addEventListener("click", async () => {
-  msgLoginErro.textContent = "";
+// login
+document.getElementById("botao-login")?.addEventListener("click", async () => {
+  const email = document.getElementById("login-email").value;
+  const senha = document.getElementById("login-senha").value;
+  const msg = document.getElementById("mensagem-login-erro");
+  msg.textContent = "";
   try {
-    await signInWithEmailAndPassword(auth, loginEmail.value, loginSenha.value);
+    await signInWithEmailAndPassword(auth, email, senha);
   } catch {
-    msgLoginErro.textContent = "E-mail ou senha incorretos.";
+    msg.textContent = "E-mail ou senha incorretos.";
   }
 });
 
-botaoSair.addEventListener("click", async () => {
+// sair
+botaoSair?.addEventListener("click", async () => {
   await signOut(auth);
-  window.location.reload();
+  location.reload();
 });
 
+// Auth → inicia o jogo
 onAuthStateChanged(auth, async (user) => {
   if (user) {
+    window.GameBridge.user = user;
     areaNaoLogada.style.display = "none";
-    areaLogada.style.display    = "block";
-    emailUsuario.textContent    = user.email;
+    areaLogada.style.display = "block";
+    emailUsuario.textContent = user.email;
 
-    try {
-      const snap = await getDoc(doc(db, "jogadores", user.uid));
-      let ultimo = 0;
-      if (snap.exists() && typeof snap.data().ultimoNivelConcluido === "number") {
-        ultimo = snap.data().ultimoNivelConcluido;
-      }
-      const versao = Math.max(1, Math.min(ultimo + 1, MAX_VERSAO));
-      gameFrame.src = `game_versions/versao_${versao}/index.html`;
-    } catch (e) {
-      console.error("Erro ao buscar progresso:", e);
-      gameFrame.src = "game_versions/versao_1/index.html";
-    }
+    const prog = await window.GameBridge.getProgress(user.uid);
+    progressoLabel.textContent = String(prog || 0);
+
+    // engine de puzzles vai ouvir esse evento
+    window.dispatchEvent(new CustomEvent("user-ready", { detail: { prog } }));
   } else {
     areaLogada.style.display = "none";
     areaNaoLogada.style.display = "block";
-    gameFrame.src = "";
-  }
-});
-
-/**
- * Quando o jogo (que não recebe mensagens) conclui uma versão,
- * nós atualizamos manualmente o Firestore via hash: #save_level_X
- * (isso é emitido pelo stub dentro do index da versão).
- */
-window.addEventListener("hashchange", async () => {
-  const h = window.location.hash;
-  if (!h.startsWith("#save_level_")) return;
-  const nivel = parseInt(h.replace("#save_level_", ""), 10);
-  if (Number.isNaN(nivel)) return;
-
-  const user = auth.currentUser;
-  if (!user) return;
-
-  try {
-    await setDoc(doc(db, "jogadores", user.uid), { ultimoNivelConcluido: nivel }, { merge: true });
-    window.location.hash = "";
-    window.location.reload();
-  } catch (e) {
-    console.error("Erro ao salvar progresso:", e);
   }
 });
