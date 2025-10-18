@@ -67,34 +67,39 @@ Conclusão do Processo: Na próxima vez que o usuário logar, o Passo 3 será ex
 ---
 Atualização do Desenvolvimento (Data: 17/10/2025):
 
-Após revisão e depuração, a arquitetura e o fluxo foram refinados da seguinte forma:
+A arquitetura geral (Website + Jogo + Firebase) e o fluxo unidirecional (Jogo -> Site) permanecem, mas a implementação detalhada foi ajustada durante a depuração:
 
 1.  **Registro de Usuário (Website - `script.js`):**
-    * Ao criar uma nova conta via `createUserWithEmailAndPassword`, o código agora também cria um documento inicial no **Firestore** na coleção `jogadores` com o `uid` do usuário.
-    * Este documento contém `ultimoNivelConcluido: 0`. Isso é feito dentro do `.then()` da criação do usuário, usando `getFirestore()`, `doc()` e `setDoc()`.
+    * **Implementação:** A lógica de criar o documento inicial no Firestore foi adicionada diretamente dentro do `.then()` do `createUserWithEmailAndPassword` no `addEventListener` do botão de cadastro.
+    * **Detalhe:** `const db = getFirestore();` é chamado *dentro* deste `.then()` para garantir que a referência ao banco de dados esteja disponível no momento da execução.
+    * **Resultado:** Um novo documento é criado em `jogadores/{user.uid}` contendo `{ email: user.email, ultimoNivelConcluido: 0 }`.
 
 2.  **Login e Carregamento do Jogo (Website - `script.js`):**
-    * A função `onAuthStateChanged` detecta o login do usuário.
-    * Ela busca o documento do usuário no Firestore (`getDoc`).
-    * Lê o valor de `ultimoNivelConcluido` (assume 0 se não existir).
-    * Calcula a versão a carregar: `versao_N+1` (onde N é `ultimoNivelConcluido`).
-    * Define o `src` de um **iframe** (ID: `game-iframe-container`) para carregar o `index.html` da pasta da versão correspondente (ex: `game_versions/versao_1/index.html`).
+    * **Implementação:** A lógica está dentro da função `onAuthStateChanged`.
+    * **Fluxo:**
+        * Obtém o `user.uid`.
+        * Busca o documento em `jogadores/{user.uid}` usando `getDoc(doc(db, "jogadores", user.uid))`.
+        * Lê `ultimoNivelConcluido`, assumindo `0` se o documento ou campo não existir.
+        * Calcula a pasta da versão: `versao_` + (`ultimoNivelConcluido` + 1).
+        * Define o `src` do elemento `iframe` com ID `game-iframe-container` para carregar o `index.html` da pasta da versão calculada (ex: `game_versions/versao_1/index.html`).
+    * **Observação:** Isso mantém a abordagem de ter múltiplas builds (versões) do jogo.
 
 3.  **Sinalização de Progresso (GameMaker - Room Creation Code):**
-    * **Mudança Importante:** A sinalização de progresso agora ocorre no **início** de cada sala de fase (`rm_faseX_cenario`), não ao completar o puzzle.
-    * No **Código de Criação da Sala** (`Room Creation Code`) de `rm_fase1_cenario`, foi adicionado: `url_open("#save_level_1");`
-    * No Código de Criação da Sala de `rm_fase2_cenario`, foi adicionado: `url_open("#save_level_2");`
-    * ... e assim por diante para todas as 10 salas de fase.
+    * **Mudança Fundamental vs. Original:** O sinal de progresso é enviado ao **entrar na sala da fase**, não ao completar o puzzle. Isso foi alterado porque o salvamento deve refletir o nível *alcançado*, permitindo ao jogador continuar de onde parou mesmo se fechar o navegador no meio da fase.
+    * **Implementação:** A função `url_open("#save_level_X");` (onde X é o número da fase) foi adicionada ao **Código de Criação da Sala** (`Room Creation Code`) de cada sala `rm_faseX_cenario`.
+    * **Hash Utilizado:** O padrão do hash é `#save_level_` seguido pelo número da fase.
 
 4.  **Salvamento do Progresso (Website - `script.js`):**
-    * Um `window.addEventListener("hashchange", ...)` monitora a URL.
-    * Quando detecta um hash começando com `#save_level_` (ex: `#save_level_1`), ele extrai o número do nível (1).
-    * Verifica se há um usuário logado (`auth.currentUser`).
-    * Usa `setDoc()` com `{ merge: true }` para atualizar o campo `ultimoNivelConcluido` do documento do usuário no Firestore para o número do nível extraído.
-    * Após salvar com sucesso, executa `window.location.reload()` para recarregar a página (o que acionará a lógica de carregamento da próxima versão no passo 2).
+    * **Implementação:** Um único `window.addEventListener("hashchange", ...)` lida com os sinais.
+    * **Fluxo:**
+        * Detecta a mudança para `#save_level_X`.
+        * Extrai o número `X`.
+        * Obtém o usuário atual (`auth.currentUser`).
+        * Usa `setDoc(doc(db, "jogadores", user.uid), { ultimoNivelConcluido: X }, { merge: true })` para atualizar **apenas** o campo `ultimoNivelConcluido` no Firestore.
+        * Após o salvamento bem-sucedido, executa `window.location.reload()` para forçar a página a recarregar e acionar a lógica de carregamento da nova versão (Passo 2).
 
 5.  **Códigos Ignorados (GameMaker):**
-    * Continuamos ignorando `obj_gerenciador_site`, `scr_save_progress`, `scr_load_progress` e qualquer lógica de save/load local baseada em `progress.sav`, pois não se encaixam nesta arquitetura.
+    * Permanece inalterado: `obj_gerenciador_site`, `scr_save_progress`, `scr_load_progress` e lógicas de save/load local (`progress.sav`) não são utilizados nesta arquitetura.
 
-**Estado Atual:** Corrigimos os erros de inicialização do Firebase (`invalid-api-key`, `db not defined`, `registerUser not defined`, `Cannot access 'db' before initialization`). A próxima etapa é testar o fluxo de **Registro** para confirmar que o documento inicial é criado corretamente no Firestore.
+**Estado Atual:** A lógica de registro foi corrigida para criar o documento inicial no Firestore. A próxima etapa é testar este fluxo de **Registro**. Os erros de inicialização e referência (`invalid-api-key`, `db not defined`, `registerUser is not defined`, `Cannot access 'db' before initialization`) foram resolvidos.
 ---
