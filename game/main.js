@@ -1,125 +1,87 @@
-import { Input, rectsIntersect } from "./core.js";
-import { LEVELS, buildLevel } from "./levels.js";
+// /game/main.js
+import {LEVELS, buildLevel} from "./levels.js";
+import {Notebook} from "./notebook.js";
+import {Input} from "./core.js";
 
-(function(){
-  const canvas = document.getElementById("game-canvas");
-  const ctx = canvas.getContext("2d");
-  Input.init();
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const hudEl = document.getElementById("hud");
 
-  const HUD = {
-    set(msg){ const el = document.getElementById("hud-msg"); if (el) el.textContent = msg||""; },
-    next(on){ const b = document.getElementById("btn-proximo"); if(b) b.disabled = !on; }
-  };
-
-  class Game {
-    constructor(){
-      this.levelIndex = 1;
-      this.world = null;
-      this.entities = null;
-      this.map = null;
-      this.notes = new Set();
-      this._loop = this._loop.bind(this);
+class Game {
+  constructor(){
+    this.entities=[]; this.player=null; this.world=null;
+    this.notes=new Set(); this.canUse=false;
+    this._lastHudT=0;
+  }
+  setHUD(text){
+    hudEl.textContent = text || "";
+    hudEl.classList.add("on");
+    this._lastHudT = performance.now();
+  }
+  unlockDoor(){ const d = this.entities.find(e=>e instanceof Object && e.draw && e.solid!==undefined); if(this.world?.door) this.world.door.open=true; }
+  collectNote(key){ this.notes.add(key); Notebook.addNote(key); } // NÃO abre o modal
+  load(id){
+    const def = LEVELS.find(l=>l.id===id) || LEVELS[0];
+    this.world = buildLevel(def);
+    this.entities = this.world.entities;
+    this.player   = this.world.player;
+    Notebook.setNotes(this.notes);  // mantém o que já tem
+    this.setHUD("Explore. Abrir caderno: C. Interagir com terminal: E.");
+  }
+  tryInteract(){
+    const t = this.entities.find(e=>e.w===22 && e.h===22); // nosso terminal
+    if (!t) return;
+    const pb=this.player.bbox, tb=t.bbox;
+    const near = !(pb.x+pb.w<tb.x-4 || pb.x>tb.x+tb.w+4 || pb.y+pb.h<tb.y-4 || pb.y>tb.y+tb.h+4);
+    if (near) t.use(this);
+  }
+  update(){
+    // checa "uso" disponível
+    const t = this.entities.find(e=>e.w===22 && e.h===22);
+    this.canUse = false;
+    if(t){
+      const pb=this.player.bbox, tb=t.bbox;
+      this.canUse = !(pb.x+pb.w<tb.x-4 || pb.x>tb.x+tb.w+4 || pb.y+pb.h<tb.y-4 || pb.y>tb.y+tb.h+4);
     }
-
-    start({startLevel=1}={}){
-      this.levelIndex = Math.max(1, Math.min(startLevel, LEVELS.length));
-      this.load(this.levelIndex);
-      requestAnimationFrame(this._loop);
-    }
-
-    load(i){
-      const def = LEVELS[i-1];
-      this.world = buildLevel(def);
-      this.entities = this.world.entities;
-      this.map      = this.world.map;
-
-      this.entities.forEach(e => e.game = this);
-      this.player = this.world.player; 
-      this.player.game = this;
-
-      HUD.set(`Sala ${this.world.id}: ${this.world.name} — ache a página, use o terminal, abra a porta.`);
-      HUD.next(false);
-    }
-
-    restartLevel(){ this.load(this.levelIndex); }
-
-    nextLevel(){
-      if (this.levelIndex < LEVELS.length){
-        this.levelIndex++;
-        this.load(this.levelIndex);
-      }
-    }
-
-    collectNote(key){
-      this.notes.add(key);
-      if (window.PuzzleEngine?.openNotebook) window.PuzzleEngine.openNotebook([...this.notes]);
-      HUD.set("Você encontrou uma página! Abra o caderno (C) para estudar.");
-    }
-
-    unlockDoor(){
-      const door = (this.entities??[]).find(e => e.constructor.name==="Door");
-      if (door) door.open = true;
-      HUD.next(true);
-    }
-
-    setHUD(msg){ HUD.set(msg); }
-
-    tryInteract(player){
-      const near = (this.entities??[]).find(e => e.constructor.name==="Terminal" && dist(player,e) <= 40);
-      if (near) return near.use(this);
-      const door = (this.entities??[]).find(e => e.constructor.name==="Door");
-      if (door && door.open && rectsIntersect(player.bbox, door.bbox)){
-        const user = window.GameBridge?.user;
-        if (user && window.GameBridge?.saveProgress){
-          window.GameBridge.saveProgress(user.uid, this.world.id).then(novo=>{
-            if (typeof novo==="number"){
-              const lab = document.getElementById("progresso-label");
-              if (lab) lab.textContent = String(novo);
-            }
-          });
-        }
-        this.nextLevel();
-      }
-    }
-
-    update(){
-      this.player.update(this);
-      for (const e of (this.entities??[])) if (e.update) e.update(this);
-      for (const e of (this.entities??[]))
-        if (e.onOverlap && rectsIntersect(this.player.bbox, e.bbox)) e.onOverlap(this, this.player);
-    }
-
-    draw(){
-      this.map.draw(ctx);
-      for (const e of (this.entities??[])) e.draw(ctx);
-      this.player.draw(ctx);
-
-      const t = (this.entities??[]).find(e => e.constructor.name==="Terminal" && dist(this.player,e)<=40);
-      if (t){ drawTip(ctx, "Pressione E para usar o terminal", this.player.x-28, this.player.y-18); }
-
-      const door = (this.entities??[]).find(e => e.constructor.name==="Door");
-      if (door && door.open && rectsIntersect(this.player.bbox, door.bbox)){
-        drawTip(ctx, "Porta aberta — avance ▶", door.x-10, door.y-18);
-      }
-    }
-
-    _loop(){
-      requestAnimationFrame(this._loop);
-      if (!this.world) return;
-      this.update(); this.draw();
+    // coleta página
+    for (const e of this.entities){ if(e.onOverlap){
+      const a=this.player.bbox, b=e.bbox;
+      if(!(a.x+a.w<b.x || a.x>b.x+b.w || a.y+a.h<b.y || a.y>b.y+b.h)){ e.onOverlap(this); }
+    }}
+    this.player.update(this);
+    // HUD fade
+    if (hudEl.classList.contains("on") && performance.now()-this._lastHudT>3000){
+      hudEl.classList.remove("on");
     }
   }
-
-  function drawTip(c, txt, x, y){
-    c.font="14px system-ui,Arial";
-    const w = c.measureText(txt).width + 12;
-    c.fillStyle="rgba(0,0,0,.6)"; c.fillRect(x-6,y-16,w,22);
-    c.fillStyle="#fff"; c.fillText(txt, x, y);
+  draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    this.world.map.draw(ctx);
+    for (const e of this.entities) e.draw?.(ctx);
+    this.player.draw(ctx);
+    if (this.canUse){
+      ctx.fillStyle="rgba(255,255,255,0.85)";
+      ctx.font="12px ui-monospace, Consolas, monospace";
+      ctx.fillText("Pressione E para usar o terminal", 12, canvas.height-14);
+    }
   }
-  function dist(a,b){
-    const dx=(a.x+12)-(b.x+b.w/2), dy=(a.y+12)-(b.y+b.h/2);
-    return Math.hypot(dx,dy);
-  }
+}
+const GAME = new Game();
+GAME.load(1);
 
-  window.Game = new Game();
-})();
+// loop
+function loop(){
+  GAME.update(); GAME.draw(); requestAnimationFrame(loop);
+}
+loop();
+
+// Atalhos debug seleção de fase (opcional)
+document.getElementById("btnNext")?.addEventListener("click", ()=>{
+  const cur = GAME.world.id; const nxt = cur+1>LEVELS.length?1:cur+1; GAME.load(nxt);
+});
+document.getElementById("btnReset")?.addEventListener("click", ()=>GAME.load(GAME.world.id));
+
+// Logout (botão Sair no header)
+document.getElementById("btnLogout")?.addEventListener("click", async ()=>{
+  try { await window.firebaseSignOut?.(); } catch(e) {}
+});

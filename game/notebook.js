@@ -1,4 +1,6 @@
-// Conteúdo enxuto — cada sala tem 1 página
+// /game/notebook.js
+// Caderno simples: só abre/fecha com "C". Nada de abrir com "E".
+
 const PAGES = {
   variaveis: {
     title: "Variáveis (introdução)",
@@ -25,13 +27,13 @@ const noteContent = document.getElementById("note-content");
 const closeBtn = document.getElementById("note-close");
 
 function render(notes){
-  const arr = [...notes];
-  if (!arr.length){
+  const list = [...notes];
+  if (!list.length){
     noteContent.innerHTML = `<p>Você ainda não coletou a página desta sala. Explore para encontrar!</p>`;
     return;
   }
-  noteContent.innerHTML = arr.map(k=>{
-    const p = PAGES[k]; if (!p) return "";
+  noteContent.innerHTML = list.map(k=>{
+    const p = PAGES[k]; if(!p) return "";
     return `<h3>${p.title}</h3><div class="note-body">${p.body}</div>`;
   }).join("<hr/>");
 }
@@ -44,30 +46,18 @@ export const Notebook = {
   close(){ modal.classList.remove("on"); },
   toggle(){ modal.classList.toggle("on"); },
 };
-
 closeBtn.onclick = ()=>Notebook.close();
 
+// Atalho: somente "C" controla o caderno
 addEventListener("keydown", (e)=>{
-  if (e.key.toLowerCase()==="c") {
-    e.preventDefault();
-    Notebook.toggle();
-  }
+  if (e.key.toLowerCase()==="c"){ e.preventDefault(); Notebook.toggle(); }
 });
 
+// Exposto pro puzzle/terminal (não abre caderno automaticamente)
 window.PuzzleEngine = {
-  openNotebook(notes){ Notebook.setNotes(notes); Notebook.open(); },
-
-  // cada sala exige sua própria página
   openForLevel(levelId, cb){
-    if (levelId===1){
-      cb?.({ok:true}); // tutorial/introdução — sem checagem
-      return;
-    }
-    if (levelId===2){
-      const ok = Notebook.notes.has("modulo");
-      cb?.({ok});
-      return;
-    }
+    if (levelId === 1){ cb?.({ok:true}); return; }
+    if (levelId === 2){ cb?.({ok: Notebook.notes.has("modulo")}); return; }
     cb?.({ok:true});
   }
 };
