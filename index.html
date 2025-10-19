@@ -37,6 +37,11 @@
     </div>
   </div>
 
+  <!-- Área do jogo -->
+  <div class="game-area" style="padding:12px;">
+    <canvas id="game" width="1024" height="560"></canvas>
+  </div>
+
   <!-- Caderno (Notebook) -->
   <div id="notebook" class="modal" aria-hidden="true">
     <div class="box">
@@ -62,8 +67,7 @@
     btnReiniciar.onclick = () => window.Game?.restartLevel();
     btnProximo.onclick   = () => window.Game?.nextLevel();
 
-    // inicia na Sala 2 pra você testar
-    window.Game?.start({startLevel: 2});
+    
   </script>
 </body>
 </html>
