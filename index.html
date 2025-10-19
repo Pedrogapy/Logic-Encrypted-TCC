@@ -1,73 +1,73 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Logic-Encrypted — Cripta</title>
-  <link rel="stylesheet" href="style.css"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Logic-Encrypted</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="wrap">
-    <h1>Logic-Encrypted</h1>
-    <p>Ande pela cripta, estude as páginas (Caderno), resolva o terminal e abra a porta.</p>
-    <button id="btnLogout" class="btn btn-secondary">Sair</button>
 
-    <div class="card">
-      <div id="status">Status Firebase: <b>Conectado com Sucesso!</b></div>
-      <div class="row" style="margin-top:10px">
-        <div id="user">Bem-vindo, <b>pedro.g.a.pereira@unirv.edu.br</b></div>
-        <div class="spacer"></div>
-        <button id="btn-reiniciar">Reiniciar sala</button>
-        <button id="btn-proximo" disabled>Próxima sala</button>
+  <header class="topbar">
+    <div>
+      <h1>Logic-Encrypted</h1>
+      <p class="subtitle">Ande pela cripta, estude as páginas (Caderno), resolva o terminal e abra a porta.</p>
+    </div>
+    <div class="session">
+      <button id="btn-logout" class="btn">Sair</button>
+    </div>
+  </header>
+
+  <section class="status">
+    <div class="status-row">
+      <div>Conectado com Sucesso!</div>
+      <div id="user-email">Bem-vindo.</div>
+    </div>
+    <div class="status-row">
+      <div>Atalho: <kbd>C</kbd> abre/fecha o Caderno. <kbd>E</kbd> interage. WASD move.</div>
+      <div>Último nível concluído: <span id="last-cleared">0</span></div>
+    </div>
+    <div class="status-row">
+      <div>
+        <button id="btn-restart" class="btn btn-secondary">Reiniciar sala</button>
+        <button id="btn-next" class="btn">Próxima sala</button>
+        <button id="btn-level-select" class="btn btn-secondary">Selecionar sala</button>
       </div>
-      <div style="margin-top:6px;color:#9fb1ff;font-size:13px">Atalho: <b>C</b> abre/fecha o Caderno.</div>
     </div>
+  </section>
 
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><b>Seu progresso</b></div>
-        <div>Último nível concluído: <b id="progresso-label">1</b></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div id="hud-msg"></div>
-      <canvas id="game-canvas" width="1024" height="560"></canvas>
-      <div class="hint">WASD para mover • E para interagir • C para Caderno</div>
-    </div>
-  </div>
-
-  <!-- Área do jogo -->
-  <div class="game-area" style="padding:12px;">
+  <main class="game-wrap">
     <canvas id="game" width="1024" height="560"></canvas>
-  </div>
+    <p class="legend">WASD para mover • E para interagir • C para Caderno</p>
+  </main>
 
-  <!-- Caderno (Notebook) -->
-  <div id="notebook" class="modal" aria-hidden="true">
-    <div class="box">
-      <div class="box-head">
-        <div class="title">Caderno Virtual</div>
-        <button id="note-close">Fechar</button>
-      </div>
-      <div id="note-content"></div>
+  <!-- Modal Caderno -->
+  <dialog id="notebook-modal" class="modal">
+    <div class="modal-header">
+      <h3>Caderno Virtual</h3>
+      <button class="btn btn-secondary" data-close-notebook>Fechar</button>
     </div>
-  </div>
+    <div id="notebook-content" class="modal-body"></div>
+  </dialog>
 
-  <script type="module">
-    import "./game/core.js";
-    import "./game/notebook.js";
-    import "./game/entities.js";
-    import "./game/levels.js";
-    import "./game/main.js";
+  <!-- Modal Terminal / Puzzle -->
+  <dialog id="puzzle-modal" class="modal">
+    <div class="modal-header">
+      <h3>Terminal</h3>
+      <button class="btn btn-secondary" data-close-puzzle>Fechar</button>
+    </div>
+    <div id="puzzle-content" class="modal-body"></div>
+  </dialog>
 
-    // UI
-    const btnReiniciar = document.getElementById("btn-reiniciar");
-    const btnProximo   = document.getElementById("btn-proximo");
+  <!-- Modal Seleção de Fase -->
+  <dialog id="level-modal" class="modal">
+    <div class="modal-header">
+      <h3>Selecionar sala</h3>
+      <button class="btn btn-secondary" data-close-level>Fechar</button>
+    </div>
+    <div id="level-content" class="modal-body"></div>
+  </dialog>
 
-    btnReiniciar.onclick = () => window.Game?.restartLevel();
-    btnProximo.onclick   = () => window.Game?.nextLevel();
-
-    
-  </script>
+  <script type="module" src="game/main.js" defer></script>
 </body>
 </html>
