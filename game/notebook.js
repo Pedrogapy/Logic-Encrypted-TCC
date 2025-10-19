@@ -1,14 +1,22 @@
 // /game/notebook.js
-// Caderno simples: só abre/fecha com "C". Nada de abrir com "E".
+// Caderno: abre/fecha com "C". Não interfere com "E".
 
 const PAGES = {
-  variaveis: {
-    title: "Variáveis (introdução)",
+  ifelse: {
+    title: "Condicionais (if/else)",
     body: `
-Uma variável guarda um valor para usar depois.
+Use <b>if</b> para tomar decisões.
 
-<code>let chaves = 0;  // começa sem chaves
-chaves = chaves + 1; // agora tenho 1</code>`
+<code>const temChave = true;
+
+if (temChave) {
+  // abre a porta
+} else {
+  // continua fechada
+}</code>
+
+✔ Dica: <code>if (temChave)</code> já é suficiente (não precisa <code>=== true</code>).
+`
   },
   modulo: {
     title: "Módulo (%) — Par/Ímpar",
@@ -46,18 +54,9 @@ export const Notebook = {
   close(){ modal.classList.remove("on"); },
   toggle(){ modal.classList.toggle("on"); },
 };
+
 closeBtn.onclick = ()=>Notebook.close();
 
-// Atalho: somente "C" controla o caderno
 addEventListener("keydown", (e)=>{
   if (e.key.toLowerCase()==="c"){ e.preventDefault(); Notebook.toggle(); }
 });
-
-// Exposto pro puzzle/terminal (não abre caderno automaticamente)
-window.PuzzleEngine = {
-  openForLevel(levelId, cb){
-    if (levelId === 1){ cb?.({ok:true}); return; }
-    if (levelId === 2){ cb?.({ok: Notebook.notes.has("modulo")}); return; }
-    cb?.({ok:true});
-  }
-};
