@@ -1,140 +1,179 @@
 // game/levels.js
 // -----------------------------------------------------------------------------
-// Esquema dos níveis usado pelo motor atual:
+// Estrutura compatível com o motor atual (main.js, entities.js, puzzle.js)
 //
-// export const LEVELS = [
-//   {
-//     id: Number,
-//     title: String,
-//     width: Number, height: Number,   // canvas interno do jogo
-//     tile: 32,                         // grade (opcional, ajuda a alinhar)
-//     spawn: { x, y },                  // onde o jogador nasce
-//     exit:  { x, y, w, h },            // zona de saída (após porta abrir)
-//     door:  { x, y, w, h, locked: true },
-//     terminal: { x, y, w, h, levelId },// 'E' abre puzzle do levelId
-//     pages: [{ x, y, key }],           // 1 página por fase (chave bate com notebook.js)
-//     walls: [{ x, y, w, h }],          // retângulos sólidos
-//     lights: [{ x, y, r }]             // efeito visual
-//   },
-//   ...
-// ]
-//
-// Observações:
-// - Fase 1 tem 1 página: key = "ifelse" (caderno -> Condicionais).
-// - Fase 2 tem 1 página: key = "modulo" (caderno -> Módulo %).
-// - O terminal SEMPRE chama o puzzle passando o id do nível (levelId).
-// - A porta só abre quando o puzzle é resolvido (pelo puzzle.js).
+// Cada fase contém:
+// - paredes sólidas
+// - spawn do jogador
+// - terminal que abre o puzzle com base no id da fase
+// - 1 página de caderno
+// - 1 porta de saída (abre após resolver o puzzle)
 // -----------------------------------------------------------------------------
 
-export const TILE = 32;
+import { Door, Page, Terminal, Player } from "./entities.js";
+
+function drawGrid(ctx, w, h) {
+  ctx.fillStyle = "#0b0f18";
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = "rgba(255,255,255,0.04)";
+  for (let x = 0; x < w; x += 32) {
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, h);
+    ctx.stroke();
+  }
+  for (let y = 0; y < h; y += 32) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(w, y + 0.5);
+    ctx.stroke();
+  }
+  const g = ctx.createRadialGradient(w / 2, h / 2, 60, w / 2, h / 2, Math.max(w, h));
+  g.addColorStop(0, "rgba(0,0,0,0)");
+  g.addColorStop(1, "rgba(0,0,0,0.45)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function drawWalls(ctx, walls) {
+  for (const r of walls) {
+    ctx.fillStyle = "#22283f";
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.strokeStyle = "#0e1324";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+  }
+}
+
+function drawTorches(ctx, torches) {
+  for (const t of torches || []) {
+    const f = 0.9 + Math.random() * 0.2;
+    const g = ctx.createRadialGradient(t.x, t.y, 6, t.x, t.y, 100);
+    g.addColorStop(0, `rgba(255,180,80,${0.4 * f})`);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(t.x - 110, t.y - 110, 220, 220);
+    ctx.fillStyle = "#ffb454";
+    ctx.fillRect(t.x - 3, t.y - 3, 6, 6);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Definição dos níveis
+// -----------------------------------------------------------------------------
 
 export const LEVELS = [
   // ---------------------------------------------------------------------------
   // FASE 1 — Condicionais (if/else)
-  // Layout: sala retangular simples, uma página de estudo e um terminal.
-  // Objetivo: resolver puzzle de if/else para abrir a porta e sair.
   // ---------------------------------------------------------------------------
   {
     id: 1,
-    title: "Galeria — Introdução",
-    width: 960,
-    height: 540,
-    tile: TILE,
-
-    // jogador nasce perto do canto esquerdo
-    spawn: { x: 120, y: 420 },
-
-    // saída fica atrás da porta (lado direito)
-    exit:  { x: 900, y: 420, w: 28, h: 80 },
-
-    // porta no corredor direito
-    door:  { x: 880, y: 392, w: 24, h: 120, locked: true },
-
-    // terminal próximo da porta (pressione E)
-    terminal: { x: 820, y: 420, w: 24, h: 24, levelId: 1 },
-
-    // *** UMA página por fase ***
-    pages: [
-      // Página sobre if/else (coleta com toque/colisão)
-      { x: 260, y: 420, key: "ifelse" }
-    ],
-
-    // paredes (retângulos) — sala externa + alguns pilares
-    walls: [
-      // moldura externa
-      { x: 60,  y: 360, w: 800, h: 24 }, // teto
-      { x: 60,  y: 504, w: 820, h: 24 }, // chão
-      { x: 60,  y: 360, w: 24,  h: 168 }, // esquerda
-      { x: 856, y: 360, w: 24,  h: 168 }, // direita (antes da porta)
-
-      // pilares internos (obstáculos simples)
-      { x: 360, y: 416, w: 40, h: 88 },
-      { x: 520, y: 416, w: 40, h: 88 },
-      { x: 680, y: 416, w: 40, h: 88 },
-    ],
-
-    // luzes decorativas (efeito visual)
-    lights: [
-      { x: 220, y: 380, r: 95 },
-      { x: 500, y: 380, r: 100 },
-      { x: 780, y: 380, r: 95 },
-    ],
+    name: "Galeria — Introdução (Condicionais)",
+    map: {
+      w: 1024,
+      h: 560,
+      walls: [
+        { x: 40, y: 80, w: 944, h: 24 }, // teto
+        { x: 40, y: 456, w: 944, h: 24 }, // chão
+        { x: 40, y: 80, w: 24, h: 400 }, // esquerda
+        { x: 960, y: 80, w: 24, h: 400 }, // direita
+        { x: 300, y: 200, w: 40, h: 200 },
+        { x: 520, y: 200, w: 40, h: 200 },
+        { x: 740, y: 200, w: 40, h: 200 },
+      ],
+      torches: [
+        { x: 140, y: 120 },
+        { x: 500, y: 120 },
+        { x: 880, y: 120 },
+      ],
+    },
+    player: { x: 80, y: 400 },
+    door: { x: 930, y: 400, w: 24, h: 64 },
+    terminal: { x: 520, y: 400 },
+    pages: [{ x: 200, y: 400, key: "ifelse" }], // Página de Condicionais
   },
 
   // ---------------------------------------------------------------------------
-  // FASE 2 — Par/Ímpar com operador % (módulo)
-  // Layout: sala com corredores verticais. 1 página e um terminal.
-  // Objetivo: resolver puzzle de par/ímpar para abrir a porta e sair.
+  // FASE 2 — Módulo (%) Par/Ímpar
   // ---------------------------------------------------------------------------
   {
     id: 2,
-    title: "Galeria da Lógica",
-    width: 960,
-    height: 540,
-    tile: TILE,
-
-    spawn: { x: 120, y: 420 },
-    exit:  { x: 900, y: 420, w: 28, h: 80 },
-
-    door:  { x: 880, y: 392, w: 24, h: 120, locked: true },
-    terminal: { x: 820, y: 420, w: 24, h: 24, levelId: 2 },
-
-    // *** UMA página por fase ***
-    pages: [
-      // Página sobre módulo % (par/ímpar)
-      { x: 440, y: 300, key: "modulo" }
-    ],
-
-    // moldura + “colunas” verticais no meio
-    walls: [
-      // moldura
-      { x: 60,  y: 360, w: 800, h: 24 },
-      { x: 60,  y: 504, w: 820, h: 24 },
-      { x: 60,  y: 360, w: 24,  h: 168 },
-      { x: 856, y: 360, w: 24,  h: 168 },
-
-      // colunas verticais
-      { x: 340, y: 380, w: 40, h: 110 },
-      { x: 480, y: 380, w: 40, h: 160 },
-      { x: 620, y: 380, w: 40, h: 120 },
-      { x: 740, y: 380, w: 40, h: 140 },
-    ],
-
-    lights: [
-      { x: 240, y: 380, r: 95 },
-      { x: 480, y: 360, r: 90 },
-      { x: 720, y: 380, r: 95 },
-      { x: 860, y: 380, r: 85 },
-    ],
+    name: "Galeria da Lógica (Módulo %)",
+    map: {
+      w: 1024,
+      h: 560,
+      walls: [
+        { x: 40, y: 80, w: 944, h: 24 },
+        { x: 40, y: 456, w: 944, h: 24 },
+        { x: 40, y: 80, w: 24, h: 400 },
+        { x: 960, y: 80, w: 24, h: 400 },
+        { x: 300, y: 160, w: 44, h: 180 },
+        { x: 520, y: 120, w: 44, h: 240 },
+        { x: 740, y: 160, w: 44, h: 180 },
+      ],
+      torches: [
+        { x: 160, y: 116 },
+        { x: 520, y: 116 },
+        { x: 880, y: 116 },
+      ],
+    },
+    player: { x: 80, y: 400 },
+    door: { x: 930, y: 120, w: 24, h: 64 },
+    terminal: { x: 760, y: 360 },
+    pages: [{ x: 400, y: 420, key: "modulo" }], // Página de módulo
   },
 ];
 
-// utilidades simples (opcional)
-export function findLevelById(id){
-  return LEVELS.find(l => l.id === id) || LEVELS[0];
-}
+// -----------------------------------------------------------------------------
+// Construtor de fase
+// -----------------------------------------------------------------------------
 
-export function nextLevelId(currentId){
-  const i = LEVELS.findIndex(l => l.id === currentId);
-  return (i >= 0 && i < LEVELS.length - 1) ? LEVELS[i+1].id : LEVELS[0].id;
+export function buildLevel(def) {
+  const map = {
+    w: def.map.w,
+    h: def.map.h,
+    walls: def.map.walls,
+    torches: def.map.torches || [],
+    draw(ctx) {
+      drawGrid(ctx, this.w, this.h);
+      drawWalls(ctx, this.walls);
+      drawTorches(ctx, this.torches);
+    },
+  };
+
+  const entities = [];
+
+  // paredes sólidas
+  for (const r of def.map.walls) {
+    entities.push({
+      x: r.x,
+      y: r.y,
+      w: r.w,
+      h: r.h,
+      solid: true,
+      get bbox() {
+        return { x: this.x, y: this.y, w: this.w, h: this.h };
+      },
+      draw() {},
+    });
+  }
+
+  // páginas coletáveis
+  if (def.pages)
+    for (const p of def.pages) entities.push(new Page(p.x, p.y, p.key));
+
+  // terminal
+  if (def.terminal)
+    entities.push(new Terminal(def.terminal.x, def.terminal.y));
+
+  // porta
+  let door = null;
+  if (def.door) {
+    door = new Door(def.door.x, def.door.y, def.door.w, def.door.h);
+    entities.push(door);
+  }
+
+  const player = new Player(def.player.x, def.player.y);
+
+  return { id: def.id, name: def.name, map, entities, player, door };
 }
