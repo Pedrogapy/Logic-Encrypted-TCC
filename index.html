@@ -1,88 +1,88 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <title>Logic-Encrypted</title>
-    <link rel="icon" href="favicon.ico" />
-    <link rel="stylesheet" href="style.css" />
-    <style>
-      :root {
-        --bg: #0f1420;
-        --panel: #151b2b;
-        --panel-2: #0f1729;
-        --fg: #e7ecf7;
-        --muted: #9aa7bd;
-        --accent: #6ea8fe;
-        --ok: #6df2bd;
-      }
-      * { box-sizing: border-box; }
-      html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--fg); font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
-      .wrap { max-width: 1200px; margin: 28px auto; padding: 0 16px; }
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Logic-Encrypted</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>Logic-Encrypted</h1>
+    <p class="sub">Ande pela cripta, estude as páginas (Caderno), resolva o terminal e abra a porta.</p>
 
-      h1 { font-size: 24px; margin: 0 0 8px; }
-      .sub { margin: 0 0 24px; color: var(--muted); }
-
-      .bar { background: var(--panel); border: 1px solid #202a40; border-radius: 10px; padding: 14px 14px; display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; align-items: center; }
-      .bar .small { color: var(--muted); font-size: 13px; }
-      .btn { background: #1b2438; color: var(--fg); border: 1px solid #243052; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
-      .btn:hover { background: #222d48; }
-      .ok { color: var(--ok); }
-
-      .panel { background: var(--panel); border: 1px solid #202a40; border-radius: 10px; padding: 14px; margin-top: 18px; }
-      .row { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); }
-
-      #game-root { margin-top: 16px; background: var(--panel-2); border: 1px solid #202a40; border-radius: 12px; padding: 12px; }
-      .game-frame { background: #0c111b; border: 1px solid #1b2438; border-radius: 12px; height: 520px; display: grid; place-items: center; overflow: hidden; }
-      canvas { display:block; width: 100%; height: 100%; image-rendering: pixelated; }
-
-      .hint { margin-top: 8px; color: var(--muted); font-size: 13px; }
-      .kbd { padding: 1px 6px; border-radius: 6px; background: #0b1220; border: 1px solid #1e2a46; color: #b7c3db; font-size: 12px; }
-      .spacer { height: 8px; }
-      .left { color: var(--muted); }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <h1>Logic-Encrypted</h1>
-      <p class="sub">Ande pela cripta, estude as páginas (Caderno), resolva o terminal e abra a porta.</p>
-
-      <!-- Barra de status / ações -->
-      <div class="bar">
-        <div class="small">
-          Status Firebase: <span class="ok">Conectado com Sucesso!</span><br />
-          Bem-vindo, <span id="user-email">aluno@exemplo.com</span>.<br />
-          Atalho: <span class="kbd">C</span> abre/fecha o Caderno.
-        </div>
-
-        <button id="btn-logout" class="btn" title="Sair da conta">Sair</button>
+    <div class="bar">
+      <div class="small">
+        Status Firebase: <span class="ok">Conectado com Sucesso!</span><br />
+        Bem-vindo, <span id="user-email">aluno@exemplo.com</span>.<br />
+        Atalho: <kbd>C</kbd> fecha/abre o Caderno (quando aberto).
+      </div>
+      <div class="actions">
+        <button id="btn-logout" class="btn">Sair</button>
         <button id="btn-restart" class="btn">Reiniciar sala</button>
         <button id="btn-next" class="btn">Próxima sala</button>
       </div>
+    </div>
 
-      <!-- Progresso -->
-      <div class="panel">
-        <div class="row">
-          <div class="left">Seu progresso</div>
-          <div>Último nível concluído: <span id="last-cleared">0</span></div>
-        </div>
-      </div>
-
-      <!-- Jogo -->
-      <div id="game-root">
-        <div class="game-frame">
-          <!-- canvas que o JS usa -->
-          <canvas id="game-canvas" width="960" height="540"></canvas>
-        </div>
-        <div class="hint">WASD para mover · <span class="kbd">E</span> para interagir · <span class="kbd">C</span> para Caderno</div>
-        <div class="spacer"></div>
+    <div class="panel">
+      <div class="row">
+        <div class="left">Seu progresso</div>
+        <div>Último nível concluído: <span id="last-cleared">0</span></div>
       </div>
     </div>
 
-    <!-- Seu script principal de jogo -->
-    <script src="game/main.js" defer></script>
-  </body>
+    <div id="game-root" class="game-root">
+      <div class="game-frame">
+        <canvas id="game-canvas" width="960" height="540"></canvas>
+
+        <!-- tooltip de interação -->
+        <div id="hint" class="hint" hidden>Pressione E para interagir</div>
+      </div>
+
+      <div class="legend">WASD para mover · <kbd>E</kbd> para interagir · <kbd>C</kbd> para Caderno</div>
+    </div>
+  </div>
+
+  <!-- Modal: Caderno -->
+  <div id="modal-notebook" class="modal" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <strong>Caderno Virtual</strong>
+        <button class="btn small" data-close="#modal-notebook">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <h3>Módulo (%) e Par/Ímpar</h3>
+        <p>O operador <code>%</code> retorna o <em>resto</em> da divisão. Números pares têm <code>n % 2 === 0</code>.</p>
+<pre><code>function parOuImpar(n) {
+  return (n % 2 === 0) ? "par" : "impar";
+}
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Terminal (puzzle) -->
+  <div id="modal-terminal" class="modal" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <strong>Terminal</strong>
+        <button class="btn small" data-close="#modal-terminal">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Puzzle — Par/Ímpar:</strong> Se o número <code>n</code> é par, a função deve retornar <code>"par"</code>, senão <code>"impar"</code>.</p>
+        <p>Teste: use <code>n = 6</code>. O que sua função deve retornar?</p>
+        <form id="terminal-form">
+          <label class="lbl">Resposta:
+            <input id="answer" class="txt" placeholder='par' autocomplete="off" />
+          </label>
+          <button class="btn" type="submit">Executar</button>
+        </form>
+        <p id="terminal-msg" class="msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="game/main.js" defer></script>
+</body>
 </html>
