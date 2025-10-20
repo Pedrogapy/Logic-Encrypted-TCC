@@ -1,7 +1,7 @@
 // game/levels.js
 // -------------------------------------------------------------
-// Fases + utilitários para impedir que itens fiquem presos
-// e para garantir um caminho do jogador até cada interação.
+// Fases + utilitários para impedir que objetos fiquem "dentro"
+// de paredes e para garantir caminho do jogador até a interação.
 // -------------------------------------------------------------
 
 /** Converte linhas de mapa (#=parede, .=piso) para 0/1 */
@@ -9,7 +9,7 @@ function parseMap(lines) {
   return lines.map(row => row.split("").map(ch => (ch === "#" ? 1 : 0)));
 }
 
-/** Limites */
+/** Limites básicos */
 function inBounds(map, x, y) {
   const H = map.length;
   const W = map[0].length;
@@ -21,30 +21,35 @@ function open(map, x, y) {
   if (inBounds(map, x, y)) map[y][x] = 0;
 }
 
-/** Abre uma clareira (tile + cruz ao redor) */
-function carveAround(map, x, y, radius = 1) {
-  open(map, x, y);
-  for (let r = 1; r <= radius; r++) {
-    open(map, x + r, y);
-    open(map, x - r, y);
-    open(map, x, y + r);
-    open(map, x, y - r);
+/** Abre uma caixa centrada (largura/altura ímpares) */
+function openBox(map, cx, cy, half = 1) {
+  // half=1 => 3x3; half=2 => 5x5...
+  for (let dy = -half; dy <= half; dy++) {
+    for (let dx = -half; dx <= half; dx++) {
+      open(map, cx + dx, cy + dy);
+    }
   }
 }
 
-/** Abre um "corredor Manhattan" (x->y) do (x0,y0) ao (x1,y1) */
+/** Abre “clareira” 3x3 + cruz maior (suave, mas garantido) */
+function carveAround(map, x, y) {
+  openBox(map, x, y, 1);     // 3x3
+  open(map, x + 2, y);
+  open(map, x - 2, y);
+  open(map, x, y + 2);
+  open(map, x, y - 2);
+}
+
+/** Abre um corredor em L (Manhattan) do (x0,y0) ao (x1,y1) */
 function carveCorridor(map, x0, y0, x1, y1) {
   let x = x0, y = y0;
-  // anda no X
   const sx = x1 > x ? 1 : -1;
   while (x !== x1) {
     x += sx;
     open(map, x, y);
-    // “folga” nas laterais
     open(map, x, y - 1);
     open(map, x, y + 1);
   }
-  // anda no Y
   const sy = y1 > y ? 1 : -1;
   while (y !== y1) {
     y += sy;
@@ -54,7 +59,7 @@ function carveCorridor(map, x0, y0, x1, y1) {
   }
 }
 
-/** BFS rápido: verifica se há caminho passável (4-direções) */
+/** BFS: existe caminho 4-dir? */
 function hasPath(map, from, to) {
   const H = map.length, W = map[0].length;
   const q = [[from.x, from.y]];
@@ -77,7 +82,7 @@ function hasPath(map, from, to) {
   return false;
 }
 
-/** Abre clareiras em volta de todos os pontos interativos */
+/** Limpa 3x3 nos objetos e vizinhos relevantes (porta/saída) */
 function ensureClearings(map, level) {
   const pts = [];
   if (level.player)   pts.push(level.player);
@@ -86,21 +91,20 @@ function ensureClearings(map, level) {
   (level.pages || []).forEach(p => pts.push(p));
   (level.terminals || []).forEach(t => pts.push(t));
 
-  // abre o próprio tile + cruz ao redor
-  pts.forEach(p => carveAround(map, p.x, p.y, 1));
+  // 3x3 em cada ponto interativo
+  pts.forEach(p => openBox(map, p.x, p.y, 1));
 
-  // garante espaço "em frente" da porta
+  // “área de frente” da porta
   if (level.door && level.exit) {
     const d = level.door;
-    if (level.exit.x > d.x) carveAround(map, d.x - 1, d.y, 1);
-    else                    carveAround(map, d.x + 1, d.y, 1);
+    if (level.exit.x > d.x) openBox(map, d.x - 1, d.y, 1);
+    else                    openBox(map, d.x + 1, d.y, 1);
   }
 }
 
-/** Garante conectividade do player a todos os pontos interativos */
+/** Garante conectividade: player -> página, terminal, porta, saída */
 function ensureConnectivity(map, level) {
   const from = level.player;
-
   const targets = [];
   if (level.pages?.length)     targets.push(level.pages[0]);
   if (level.terminals?.length) targets.push(level.terminals[0]);
@@ -111,16 +115,15 @@ function ensureConnectivity(map, level) {
     if (!hasPath(map, from, t)) {
       carveCorridor(map, from.x, from.y, t.x, t.y);
     }
+    // abre 3x3 no alvo (caso corredor tenha “colado” nele)
+    openBox(map, t.x, t.y, 1);
   }
 }
 
-/** Constrói uma fase pronta pro engine */
-export function buildLevel(def) {
+/** Monta uma fase pronta */
+function buildLevel(def) {
   const map = parseMap(def.map);
-
-  // abre os tiles dos itens e arredores
   ensureClearings(map, def);
-  // garante caminho do jogador até página/terminal/porta/saída
   ensureConnectivity(map, def);
 
   return {
@@ -139,7 +142,6 @@ export function buildLevel(def) {
 
 // -------------------------------------------------------------
 // Fase 1 — 1 página + 1 terminal + 1 porta + saída
-// (coordenadas pensadas pra ficarem visíveis no seu layout)
 // -------------------------------------------------------------
 const LVL1 = buildLevel({
   id: 1,
@@ -157,16 +159,16 @@ const LVL1 = buildLevel({
     "#....................#",
     "######################",
   ],
-  player:   { x: 4,  y: 7 },
-  pages:    [{ x: 6,  y: 4 }],
-  terminals:[{ x: 12, y: 4 }],
+  player:   { x: 6,  y: 7 },
+  pages:    [{ x: 7,  y: 5 }],
+  terminals:[{ x: 13, y: 5 }],
   door:     { x: 18, y: 6, locked: true },
   exit:     { x: 19, y: 6 },
   puzzleId: "parImpar"
 });
 
 // -------------------------------------------------------------
-// Fase 2 — idem (uma página e um terminal)
+// Fase 2 — 1 página + 1 terminal + 1 porta + saída
 // -------------------------------------------------------------
 const LVL2 = buildLevel({
   id: 2,
@@ -185,9 +187,9 @@ const LVL2 = buildLevel({
     "#.................#..#",
     "######################",
   ],
-  player:   { x: 2,  y: 9 },
-  pages:    [{ x: 5,  y: 5 }],
-  terminals:[{ x: 10, y: 5 }],
+  player:   { x: 3,  y: 9 },
+  pages:    [{ x: 6,  y: 5 }],
+  terminals:[{ x: 11, y: 5 }],
   door:     { x: 17, y: 7, locked: true },
   exit:     { x: 18, y: 7 },
   puzzleId: "comparadores"
