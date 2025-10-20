@@ -87,3 +87,55 @@ export const PUZZLES = {
     solution: (n)=>{ let s=0; for(let i=1;i<=n;i++) s+=i; return s; }
   }
 };
+// game/puzzles.js
+// -------------------------------------------------------------
+// Define o conteúdo do caderno e a validação de cada puzzle.
+// ui.openPuzzle(puzzleId) vai usar "validators[puzzleId]".
+// Page usa "notebookContent[puzzleId]".
+// -------------------------------------------------------------
+
+export const notebookContent = {
+  parImpar: [
+`Módulo (%) e Par/Ímpar
+
+O operador % retorna o resto da divisão.
+Números pares têm (n % 2) == 0.
+
+Exemplo:
+function parOuImpar(n) {
+  return (n % 2 === 0) ? "par" : "ímpar";
+}`],
+  comparadores: [
+`Condicionais (if/else) e comparadores
+
+==  igualdade (valor)
+=== igualdade (valor e tipo)
+!=  diferente
+>   maior que   <   menor que
+>=  maior ou igual   <= menor ou igual
+
+Exemplo de decisão:
+if (nivel >= 2) {
+  // libera acesso
+} else {
+  // bloqueia
+}`]
+};
+
+export const validators = {
+  // nível 1: pergunta simples de par/ímpar
+  parImpar: async (ui) => {
+    const nStr = await ui.prompt("Digite um número inteiro. A porta abre se for PAR:");
+    const n = Number(nStr);
+    if (!Number.isInteger(n)) return false;
+    return (n % 2 === 0);
+  },
+
+  // nível 2: comparadores / if
+  comparadores: async (ui) => {
+    const nvStr = await ui.prompt("Você encontrou o valor do nível. Digite um número >= 2 para liberar:");
+    const nv = Number(nvStr);
+    if (!Number.isFinite(nv)) return false;
+    return nv >= 2;
+  }
+};

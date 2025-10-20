@@ -1,106 +1,197 @@
-// /game/entities.js
-import {Input} from "./core.js";
+// game/entities.js
+// ------------------------------------------------------------------
+// Entidades base (Player, Page, Terminal, Door, Exit)
+// A porta agora é INTERATIVA: só abre se o puzzle da fase for
+// resolvido no Terminal (game.levelState.doorOpen = true).
+// ------------------------------------------------------------------
 
-/** resolve por eixo sem "empurrões": encosta no sólido mais próximo */
-function moveAxis(entity, solids, dx, dy){
-  if (dx !== 0){
-    let newX = entity.x + dx;
-    const bb = {x:newX, y:entity.y, w:entity.w, h:entity.h};
-    for (const s of solids){
-      if(!s.solid) continue;
-      if (!(bb.x + bb.w < s.x || bb.x > s.x + s.w || bb.y + bb.h < s.y || bb.y > s.y + s.h)){
-        // colisão no X: gruda na borda
-        if (dx > 0) newX = Math.min(newX, s.x - entity.w);
-        else        newX = Math.max(newX, s.x + s.w);
-        bb.x = newX;
-      }
+export class Entity {
+  constructor(x, y) {
+    this.x = x; // em tiles
+    this.y = y;
+    this.w = 1;
+    this.h = 1;
+    this.solid = false; // colisão bloqueia?
+    this.interactive = false; // aparece dica "E"
+    this.type = "entity";
+  }
+
+  update(dt, game) {}
+  draw(ctx, tileSize, theme) {
+    // padrão: nada
+  }
+
+  overlapsPlayer(px, py) {
+    return Math.abs(px - this.x) < 1 && Math.abs(py - this.y) < 1;
+  }
+}
+
+export class Player extends Entity {
+  constructor(x, y) {
+    super(x, y);
+    this.type = "player";
+    this.speed = 6; // tiles/seg
+  }
+
+  update(dt, game) {
+    const k = game.input;
+    let vx = 0;
+    let vy = 0;
+    if (k.left)  vx -= 1;
+    if (k.right) vx += 1;
+    if (k.up)    vy -= 1;
+    if (k.down)  vy += 1;
+    if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
+
+    const nx = this.x + vx * this.speed * dt;
+    const ny = this.y + vy * this.speed * dt;
+
+    // colisão grade simples
+    if (!game.isWallAt(nx, this.y)) this.x = nx;
+    if (!game.isWallAt(this.x, ny)) this.y = ny;
+  }
+
+  draw(ctx, tile, theme) {
+    ctx.fillStyle = theme.player;
+    ctx.fillRect(this.x * tile, this.y * tile, tile, tile);
+  }
+}
+
+export class Page extends Entity {
+  constructor(x, y, textBlocks = []) {
+    super(x, y);
+    this.type = "page";
+    this.interactive = true;
+    this.textBlocks = textBlocks;
+  }
+
+  onInteract(game) {
+    // abre caderno com os blocos desta fase
+    game.ui.openNotebook(this.textBlocks);
+  }
+
+  draw(ctx, tile, theme) {
+    ctx.fillStyle = theme.page;
+    ctx.fillRect(this.x * tile + tile*0.15, this.y * tile + tile*0.15, tile*0.7, tile*0.7);
+  }
+}
+
+export class Terminal extends Entity {
+  constructor(x, y, puzzleId) {
+    super(x, y);
+    this.type = "terminal";
+    this.interactive = true;
+    this.puzzleId = puzzleId;
+  }
+
+  async onInteract(game) {
+    // abre puzzle; se resolver, marca porta aberta
+    const ok = await game.ui.openPuzzle(this.puzzleId);
+    if (ok) {
+      game.levelState.doorOpen = true;
+      game.ui.toast("Porta destravada!");
+    } else {
+      game.ui.toast("Resposta incorreta. Tente novamente.");
     }
-    entity.x = newX;
   }
-  if (dy !== 0){
-    let newY = entity.y + dy;
-    const bb = {x:entity.x, y:newY, w:entity.w, h:entity.h};
-    for (const s of solids){
-      if(!s.solid) continue;
-      if (!(bb.x + bb.w < s.x || bb.x > s.x + s.w || bb.y + bb.h < s.y || bb.y > s.y + s.h)){
-        if (dy > 0) newY = Math.min(newY, s.y - entity.h);
-        else        newY = Math.max(newY, s.y + s.h);
-        bb.y = newY;
-      }
+
+  draw(ctx, tile, theme) {
+    ctx.fillStyle = theme.terminal;
+    ctx.fillRect(this.x * tile + tile*0.1, this.y * tile + tile*0.1, tile*0.8, tile*0.8);
+  }
+}
+
+export class Door extends Entity {
+  constructor(x, y, initiallyLocked = true) {
+    super(x, y);
+    this.type = "door";
+    this.solid = true;         // bloqueia a passagem enquanto trancada
+    this.interactive = true;   // pode apertar E perto da porta
+    this.locked = initiallyLocked;
+    this.opened = false;
+  }
+
+  tryOpen(game) {
+    // Só abre se o puzzle foi resolvido
+    if (game.levelState.doorOpen) {
+      this.locked = false;
+      this.opened = true;
+      this.solid = false;
+      game.ui.toast("A porta abriu!");
+    } else {
+      game.ui.toast("Resolva o terminal para destravar a porta.");
     }
-    entity.y = newY;
+  }
+
+  onInteract(game) {
+    if (!this.opened) this.tryOpen(game);
+  }
+
+  draw(ctx, tile, theme) {
+    if (this.opened) {
+      // porta aberta (marcada como “luz verde”)
+      ctx.fillStyle = theme.doorOpen;
+      ctx.fillRect(this.x * tile + tile*0.35, this.y * tile, tile*0.3, tile);
+      return;
+    }
+    // Porta fechada (bloco vertical)
+    ctx.fillStyle = this.locked ? theme.doorLocked : theme.doorOpen;
+    ctx.fillRect(this.x * tile + tile*0.25, this.y * tile, tile*0.5, tile);
   }
 }
 
-export class Player {
-  constructor(x,y){
-    this.x=x; this.y=y; this.w=24; this.h=24;
-    this.speed=2.2; this.color="#5fdcb1";
+export class Exit extends Entity {
+  constructor(x, y) {
+    super(x, y);
+    this.type = "exit";
   }
-  get bbox(){return {x:this.x,y:this.y,w:this.w,h:this.h};}
-  update(game){
-    const solids = (game?.entities ?? []).filter(e=>e.solid);
 
-    let dx=0, dy=0;
-    if (Input.isDown("w") || Input.isDown("arrowup"))    dy -= 1;
-    if (Input.isDown("s") || Input.isDown("arrowdown"))  dy += 1;
-    if (Input.isDown("a") || Input.isDown("arrowleft"))  dx -= 1;
-    if (Input.isDown("d") || Input.isDown("arrowright")) dx += 1;
-
-    const len = Math.hypot(dx,dy) || 1;
-    dx = (dx/len)*this.speed;
-    dy = (dy/len)*this.speed;
-
-    moveAxis(this, solids, dx, 0);
-    moveAxis(this, solids, 0, dy);
-
-    // “E” apenas tenta interagir (terminal/perto)
-    if (Input.isDown("e") && game?.canUse){ game.tryInteract(this); }
+  update(dt, game) {
+    // se player está dentro, termina fase
+    const px = game.player.x;
+    const py = game.player.y;
+    if (Math.hypot(px - this.x, py - this.y) < 0.6) {
+      game.finishLevel();
+    }
   }
-  draw(ctx){
-    ctx.fillStyle=this.color; ctx.fillRect(this.x,this.y,this.w,this.h);
-    ctx.strokeStyle="#163a37"; ctx.lineWidth=2; ctx.strokeRect(this.x+0.5,this.y+0.5,this.w-1,this.h-1);
+
+  draw(ctx, tile, theme) {
+    ctx.fillStyle = theme.exit;
+    ctx.fillRect(this.x * tile + tile*0.2, this.y * tile + tile*0.2, tile*0.6, tile*0.6);
   }
 }
 
-export class Door {
-  constructor(x,y,w,h){ this.x=x; this.y=y; this.w=w; this.h=h; this.open=false; }
-  get solid(){ return !this.open; }
-  get bbox(){ return {x:this.x,y:this.y,w:this.w,h:this.h}; }
-  draw(ctx){
-    ctx.fillStyle = this.open ? "#2ecc71" : "#8e44ad";
-    ctx.fillRect(this.x,this.y,this.w,this.h);
-    ctx.strokeStyle="#271a34"; ctx.lineWidth=2; ctx.strokeRect(this.x+0.5,this.y+0.5,this.w-1,this.h-1);
-  }
-}
+/**
+ * Fabrica entidades a partir da definição do nível
+ */
+export function spawnEntities(game, levelDef, notebookContentByPuzzle) {
+  const ents = [];
 
-export class Terminal {
-  constructor(x,y){ this.x=x; this.y=y; this.w=22; this.h=22; }
-  get bbox(){ return {x:this.x,y:this.y,w:this.w,h:this.h}; }
-  use(game){
-    window.PuzzleEngine?.openForLevel?.(game.world.id, res=>{
-      if(res?.ok){ game.unlockDoor(); game.setHUD("Porta desbloqueada! Vá até a saída."); }
-      else { game.setHUD("Resposta incorreta. Consulte a página (C)."); }
-    });
-  }
-  draw(ctx){
-    ctx.fillStyle="#ffd166"; ctx.fillRect(this.x,this.y,this.w,this.h);
-    ctx.strokeStyle="#3f2b10"; ctx.lineWidth=2; ctx.strokeRect(this.x+0.5,this.y+0.5,this.w-1,this.h-1);
-  }
-}
+  // Player
+  game.player = new Player(levelDef.player.x, levelDef.player.y);
+  ents.push(game.player);
 
-export class Page {
-  constructor(x,y,key){ this.x=x; this.y=y; this.w=18; this.h=18; this.key=key; this.collected=false; }
-  get bbox(){ return {x:this.x,y:this.y,w:this.w,h:this.h}; }
-  onOverlap(game){
-    if(this.collected) return;
-    this.collected = true;
-    game.collectNote?.(this.key);  // NÃO abre caderno automaticamente
-    game.setHUD("Página coletada! Abra o caderno com C.");
+  // Page (uma por fase)
+  if (levelDef.pages?.length) {
+    // conteúdo do caderno vem do puzzleId da fase
+    const content = notebookContentByPuzzle[levelDef.puzzleId] || [];
+    const p = levelDef.pages[0];
+    ents.push(new Page(p.x, p.y, content));
   }
-  draw(ctx){
-    if(this.collected) return;
-    ctx.fillStyle="#6aa0ff"; ctx.fillRect(this.x,this.y,this.w,this.h);
-    ctx.strokeStyle="#2c3e7d"; ctx.lineWidth=2; ctx.strokeRect(this.x+0.5,this.y+0.5,this.w-1,this.h-1);
+
+  // Terminal
+  if (levelDef.terminals?.length) {
+    const t = levelDef.terminals[0];
+    ents.push(new Terminal(t.x, t.y, levelDef.puzzleId));
   }
+
+  // Door
+  if (levelDef.door) {
+    ents.push(new Door(levelDef.door.x, levelDef.door.y, levelDef.door.locked));
+  }
+
+  // Exit
+  if (levelDef.exit) ents.push(new Exit(levelDef.exit.x, levelDef.exit.y));
+
+  return ents;
 }
